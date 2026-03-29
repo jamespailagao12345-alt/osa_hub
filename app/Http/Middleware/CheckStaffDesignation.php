@@ -20,19 +20,25 @@ class CheckStaffDesignation
         }
 
         // Allow role 2 staff whose designation matches either on user, staff profile, or Staff table
+        // Try to find staff record by email (case-insensitive) for better matching
+        $staffRecord = \App\Models\Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($user->email))])->first();
+        
         $userDesignation = $user->designation 
             ?? optional($user->staffProfile)->designation 
-            ?? \App\Models\Staff::where('email', $user->email)->value('designation');
+            ?? ($staffRecord ? $staffRecord->designation : null);
         
-        // Normalize "Safety Officer" to "EMT Coordinator" for backward compatibility
         $normalizedUserDesignation = trim($userDesignation ?? '');
-        if (strcasecmp($normalizedUserDesignation, 'Safety Officer') === 0) {
-            $normalizedUserDesignation = 'EMT Coordinator';
+        
+        // Normalize "Guidance Counsellor" (British) to "Guidance Counselor" (American)
+        if (strcasecmp($normalizedUserDesignation, 'Guidance Counsellor') === 0) {
+            $normalizedUserDesignation = 'Guidance Counselor';
         }
         
         $normalizedRequiredDesignation = trim($requiredDesignation);
-        if (strcasecmp($normalizedRequiredDesignation, 'Safety Officer') === 0) {
-            $normalizedRequiredDesignation = 'EMT Coordinator';
+        
+        // Normalize "Guidance Counsellor" (British) to "Guidance Counselor" (American)
+        if (strcasecmp($normalizedRequiredDesignation, 'Guidance Counsellor') === 0) {
+            $normalizedRequiredDesignation = 'Guidance Counselor';
         }
         
         if ((int)($user->role ?? 0) === 2 && $normalizedUserDesignation && strcasecmp($normalizedUserDesignation, $normalizedRequiredDesignation) === 0) {

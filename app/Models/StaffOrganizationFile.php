@@ -20,6 +20,7 @@ class StaffOrganizationFile extends Model
         'mime_type',
         'description',
         'uploaded_by',
+        'status',
     ];
 
     /**

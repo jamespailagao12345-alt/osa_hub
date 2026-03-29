@@ -1,4 +1,4 @@
-<div class="bg-light">
+<div class="">
     <div class="page-section pb-0">
         <div class="container">
             <div class="row align-items-center">

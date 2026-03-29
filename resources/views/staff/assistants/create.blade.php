@@ -18,7 +18,10 @@
 <div class="container-fluid">
     <div class="row">
         @include('staff.partials.sidebar')
-        <main class="col-md-10">
+        <main id="staffMain" class="col-md-10">
+            <div class="admin-back-btn-wrap mb-3">
+                <a href="{{ route('staff.student-leaders.index') }}" class="btn btn-secondary">Back</a>
+            </div>
             <style>
                 .personal-data-sheet {
                     background: white;
@@ -192,7 +195,7 @@
                     PERSONAL DATA SHEET
                 </div>
 
-                <form method="POST" action="{{ route('staff.assistants.store') }}" enctype="multipart/form-data">
+                <form method="POST" action="{{ route('staff.student-leaders.store') }}" enctype="multipart/form-data">
                     @csrf
                     @if($selectedOrganizationId)
                         <input type="hidden" name="organization_id" value="{{ $selectedOrganizationId }}">
@@ -224,8 +227,8 @@
                                 <input type="text" name="first_name" id="first_name" class="form-control" value="{{ old('first_name') }}" required style="text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase()">
                             </div>
                             <div class="form-group">
-                                <label class="form-label">Middle Name</label>
-                                <input type="text" name="middle_name" id="middle_name" class="form-control" value="{{ old('middle_name') }}" style="text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase()">
+                                <label class="form-label">Middle Initial</label>
+                                <input type="text" name="middle_name" id="middle_name" class="form-control" value="{{ old('middle_name') }}" maxlength="1" pattern="[A-Za-z]" title="Enter only one alphabet character" style="text-transform: uppercase;" onkeyup="this.value = this.value.toUpperCase()">
                             </div>
                         </div>
                     </div>
@@ -236,12 +239,17 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label class="form-label">Affiliation</label>
-                                <select name="organization_id" id="organization_id" class="form-select" required>
-                                    <option value="">Select Organization</option>
-                                    @foreach($organizations as $org)
-                                        <option value="{{ $org->id }}" {{ old('organization_id', $selectedOrganizationId ?? null) == $org->id ? 'selected' : '' }}>{{ $org->name }}</option>
-                                    @endforeach
-                                </select>
+                                @if($selectedOrganizationId && $selectedOrganization)
+                                    <input type="text" class="form-control" value="{{ $selectedOrganization->name }}" readonly style="background-color: #e9ecef;">
+                                    <input type="hidden" name="organization_id" value="{{ $selectedOrganizationId }}">
+                                @else
+                                    <select name="organization_id" id="organization_id" class="form-select" required>
+                                        <option value="">Select Organization</option>
+                                        @foreach($organizations as $org)
+                                            <option value="{{ $org->id }}" data-department-id="{{ $org->department_id ?? '' }}" {{ old('organization_id', $selectedOrganizationId ?? null) == $org->id ? 'selected' : '' }}>{{ $org->name }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Position</label>
@@ -333,14 +341,17 @@
                             </div>
                         </div>
                         <div class="form-row">
-                            <div class="form-group" id="department_group" style="display: none;">
+                            <div class="form-group" id="department_group" style="display: {{ ($selectedOrganization && $selectedOrganization->department_id) ? 'block' : 'none' }};">
                                 <label class="form-label">Department</label>
-                                <select name="department_id" id="department_id" class="form-select">
+                                <select name="department_id" id="department_id" class="form-select" {{ ($selectedOrganization && $selectedOrganization->department_id) ? 'disabled' : '' }}>
                                     <option value="">Select Department</option>
                                     @foreach($departments as $dept)
-                                        <option value="{{ $dept->id }}" {{ old('department_id') == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
+                                        <option value="{{ $dept->id }}" {{ old('department_id', ($selectedOrganization && $selectedOrganization->department_id == $dept->id) ? $dept->id : null) == $dept->id ? 'selected' : '' }}>{{ $dept->name }}</option>
                                     @endforeach
                                 </select>
+                                @if($selectedOrganization && $selectedOrganization->department_id)
+                                    <input type="hidden" name="department_id" value="{{ $selectedOrganization->department_id }}">
+                                @endif
                             </div>
                             <div class="form-group">
                                 <label class="form-label">Residential Address</label>
@@ -367,7 +378,7 @@
                                 <label class="form-label">Course</label>
                                 <select name="course_id" id="course_id" class="form-select">
                                     <option value="">Select Course</option>
-                                    @foreach(\App\Models\Course::orderBy('name')->get() as $course)
+                                    @foreach($courses as $course)
                                         <option value="{{ $course->id }}" data-department-id="{{ $course->department_id }}" {{ old('course_id') == $course->id ? 'selected' : '' }}>{{ $course->name }}</option>
                                     @endforeach
                                 </select>
@@ -435,7 +446,7 @@
 
                     <div style="clear: both; margin-top: 20px; text-align: center;">
                         <button type="submit" class="btn btn-primary btn-lg">Submit Personal Data Sheet</button>
-                        <a href="{{ route('staff.assistants.index') }}" class="btn btn-secondary btn-lg">Cancel</a>
+                        <a href="{{ route('staff.student-leaders.index') }}" class="btn btn-secondary btn-lg">Cancel</a>
                     </div>
                 </form>
             </div>
@@ -470,69 +481,257 @@ function previewImage(input) {
     }
 }
 
-// Check if organization is department-related and show/hide department field
+// Check if organization is academic (has department_id) and autofill department, filter courses
 document.addEventListener('DOMContentLoaded', function() {
     const organizationSelect = document.getElementById('organization_id');
+    const organizationInput = document.querySelector('input[name="organization_id"][type="hidden"]');
     const departmentGroup = document.getElementById('department_group');
-    const residentialAddressGroup = document.querySelector('[for="complete_home_address"]').parentElement;
-    
-    // Department-related organization names
-    const departmentRelatedOrgs = [
-        'Student Council of Agriculture Technology',
-        'Student Council of Information Technology',
-        'Student Council of Technology and Livelihood Education'
-    ];
-    
-    function checkOrganization() {
-        const selectedOption = organizationSelect.options[organizationSelect.selectedIndex];
-        const orgName = selectedOption ? selectedOption.text : '';
-        const isDepartmentRelated = departmentRelatedOrgs.some(org => orgName.includes(org));
-        
-        if (selectedOption && selectedOption.value && !isDepartmentRelated) {
-            // Show department field if organization is selected and NOT department-related
-            departmentGroup.style.display = 'block';
-        } else {
-            // Hide department field if organization is department-related or not selected
-            departmentGroup.style.display = 'none';
-            document.getElementById('department_id').value = '';
-        }
-    }
-    
-    organizationSelect.addEventListener('change', checkOrganization);
-    checkOrganization(); // Check on page load
-    
-    // Course filtering based on department (if department is selected)
     const departmentSelect = document.getElementById('department_id');
     const courseSelect = document.getElementById('course_id');
     
-    function filterCourses() {
-        const selectedDeptId = departmentSelect.value;
-        const options = courseSelect.querySelectorAll('option');
+    // If organization is read-only (provided via URL), get the organization ID from hidden input
+    const currentOrgId = organizationInput ? organizationInput.value : (organizationSelect ? organizationSelect.value : null);
+    
+    // Store all courses for dynamic filtering
+    const allCourses = Array.from(courseSelect.querySelectorAll('option')).map(opt => ({
+        value: opt.value,
+        text: opt.text,
+        departmentId: opt.getAttribute('data-department-id'),
+        element: opt
+    }));
+    
+    function checkOrganization() {
+        let orgDepartmentId = null;
+        let isAcademic = false;
+        let hasOrganization = false;
         
-        options.forEach(option => {
-            if (option.value === '') {
-                option.style.display = 'block';
-            } else {
-                const optionDeptId = option.getAttribute('data-department-id');
-                if (selectedDeptId && optionDeptId !== selectedDeptId) {
-                    option.style.display = 'none';
+        // Handle case where organization is read-only (from URL parameter)
+        if (organizationInput && !organizationSelect) {
+            // Organization is already set via URL
+            hasOrganization = true;
+            @if($selectedOrganization && $selectedOrganization->department_id)
+                orgDepartmentId = @json($selectedOrganization->department_id);
+                isAcademic = true;
+            @endif
+        } else if (organizationSelect) {
+            // Handle case where organization is a select dropdown
+            const selectedOption = organizationSelect.options[organizationSelect.selectedIndex];
+            hasOrganization = selectedOption && selectedOption.value;
+            orgDepartmentId = selectedOption ? selectedOption.getAttribute('data-department-id') : null;
+            isAcademic = orgDepartmentId && orgDepartmentId !== '';
+        } else {
+            return; // No organization field found
+        }
+        
+        if (hasOrganization) {
+            if (isAcademic) {
+                // Organization is academic - autofill department and disable it
+                departmentGroup.style.display = 'block';
+                departmentSelect.value = orgDepartmentId;
+                departmentSelect.disabled = true;
+                departmentSelect.style.backgroundColor = '#e9ecef';
+                
+                // Add hidden input to ensure value is submitted
+                let hiddenInput = departmentGroup.querySelector('input[type="hidden"][name="department_id"]');
+                if (!hiddenInput) {
+                    hiddenInput = document.createElement('input');
+                    hiddenInput.type = 'hidden';
+                    hiddenInput.name = 'department_id';
+                    hiddenInput.value = orgDepartmentId;
+                    departmentGroup.appendChild(hiddenInput);
                 } else {
-                    option.style.display = 'block';
+                    hiddenInput.value = orgDepartmentId;
+                }
+                
+                // Filter courses to only show those from this department
+                filterCoursesByDepartment(orgDepartmentId);
+            } else {
+                // Organization is non-academic - show department field but allow selection
+                departmentGroup.style.display = 'block';
+                departmentSelect.disabled = false;
+                departmentSelect.style.backgroundColor = '';
+                
+                // Remove hidden input if it exists
+                const hiddenInput = departmentGroup.querySelector('input[type="hidden"][name="department_id"]');
+                if (hiddenInput) {
+                    hiddenInput.remove();
+                }
+                
+                // If department is already selected, filter courses by that department
+                if (departmentSelect.value) {
+                    filterCoursesByDepartment(departmentSelect.value);
+                } else {
+                    // Show all courses if no department selected
+                    showAllCourses();
                 }
             }
-        });
-        
-        // Reset course selection if it doesn't match the department
-        if (selectedDeptId) {
-            const selectedOption = courseSelect.options[courseSelect.selectedIndex];
-            if (selectedOption && selectedOption.value && selectedOption.getAttribute('data-department-id') !== selectedDeptId) {
-                courseSelect.value = '';
-            }
+        } else {
+            // No organization selected - hide department field
+            departmentGroup.style.display = 'none';
+            departmentSelect.value = '';
+            showAllCourses();
         }
     }
     
-    departmentSelect.addEventListener('change', filterCourses);
-    filterCourses(); // Filter on page load
+    function filterCoursesByDepartment(departmentId) {
+        // Clear current options except the first "Select Course" option
+        courseSelect.innerHTML = '<option value="">Select Course</option>';
+        
+        // Convert departmentId to string for consistent comparison
+        // (getAttribute returns strings, but JSON may return numbers)
+        const departmentIdStr = String(departmentId);
+        
+        // Add only courses that match the department
+        allCourses.forEach(course => {
+            if (course.value === '') return; // Skip the empty option we just added
+            
+            // Convert course.departmentId to string for comparison
+            if (String(course.departmentId) === departmentIdStr) {
+                const option = document.createElement('option');
+                option.value = course.value;
+                option.textContent = course.text;
+                option.setAttribute('data-department-id', course.departmentId);
+                courseSelect.appendChild(option);
+            }
+        });
+    }
+    
+    function showAllCourses() {
+        // Restore all courses
+        courseSelect.innerHTML = '<option value="">Select Course</option>';
+        allCourses.forEach(course => {
+            if (course.value === '') return;
+            const option = document.createElement('option');
+            option.value = course.value;
+            option.textContent = course.text;
+            option.setAttribute('data-department-id', course.departmentId);
+            courseSelect.appendChild(option);
+        });
+    }
+    
+    // Handle organization change (only if it's a select, not read-only)
+    if (organizationSelect) {
+        organizationSelect.addEventListener('change', checkOrganization);
+    }
+    
+    // Handle department change (for non-academic organizations)
+    departmentSelect.addEventListener('change', function() {
+        let orgDepartmentId = null;
+        let isAcademic = false;
+        
+        // Check if organization is read-only (pre-selected via URL)
+        if (organizationInput && !organizationSelect) {
+            // Organization is read-only - get department ID from selected organization data
+            @if($selectedOrganization && $selectedOrganization->department_id)
+                orgDepartmentId = @json($selectedOrganization->department_id);
+                isAcademic = true;
+            @endif
+        } else if (organizationSelect) {
+            // Organization is a select dropdown - get department ID from selected option
+            const selectedOption = organizationSelect.options?.[organizationSelect.selectedIndex];
+            orgDepartmentId = selectedOption ? selectedOption.getAttribute('data-department-id') : null;
+            isAcademic = orgDepartmentId && orgDepartmentId !== '';
+        }
+        
+        // Only filter courses if organization is NOT academic (academic orgs already filtered)
+        if (!isAcademic && departmentSelect.value) {
+            filterCoursesByDepartment(departmentSelect.value);
+        } else if (!isAcademic && !departmentSelect.value) {
+            showAllCourses();
+        }
+    });
+    
+    // Check on page load
+    checkOrganization();
+    
+    // Fetch past organizations when user_id or email is entered
+    const userIdInput = document.getElementById('user_id');
+    const emailInput = document.getElementById('email');
+    const currentOrganizationId = @json($selectedOrganizationId ?? null);
+    
+    function fetchPastOrganizations() {
+        const userId = userIdInput.value.trim();
+        const email = emailInput.value.trim();
+        
+        if (!userId && !email) {
+            clearLeadershipBackground();
+            return;
+        }
+        
+        // Debounce the API call
+        clearTimeout(window.fetchOrganizationsTimeout);
+        window.fetchOrganizationsTimeout = setTimeout(function() {
+            fetch('{{ route("staff.student-leaders.fetch-past-organizations") }}', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '{{ csrf_token() }}',
+                    'Accept': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    email: email,
+                    current_organization_id: currentOrganizationId
+                })
+            })
+            .then(response => response.json())
+            .then(data => {
+                populateLeadershipBackground(data.past_organizations || []);
+            })
+            .catch(error => {
+                console.error('Error fetching past organizations:', error);
+            });
+        }, 500); // Wait 500ms after user stops typing
+    }
+    
+    function populateLeadershipBackground(pastOrgs) {
+        const tbody = document.querySelector('.leadership-table tbody');
+        const rows = tbody.querySelectorAll('tr');
+        
+        // Clear all rows first
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            inputs[0].value = ''; // organization
+            inputs[1].value = ''; // position
+            inputs[2].value = ''; // year
+        });
+        
+        // Populate with past organizations (reverse chronological order - newest first)
+        pastOrgs.forEach((org, index) => {
+            if (index < rows.length) {
+                const inputs = rows[index].querySelectorAll('input');
+                inputs[0].value = org.organization_name || '';
+                inputs[1].value = org.position || '';
+                inputs[2].value = org.year || '';
+            }
+        });
+    }
+    
+    function clearLeadershipBackground() {
+        const tbody = document.querySelector('.leadership-table tbody');
+        const rows = tbody.querySelectorAll('tr');
+        rows.forEach(row => {
+            const inputs = row.querySelectorAll('input');
+            inputs[0].value = '';
+            inputs[1].value = '';
+            inputs[2].value = '';
+        });
+    }
+    
+    // Add event listeners for user_id and email
+    if (userIdInput) {
+        userIdInput.addEventListener('input', fetchPastOrganizations);
+        userIdInput.addEventListener('blur', fetchPastOrganizations);
+    }
+    if (emailInput) {
+        emailInput.addEventListener('input', fetchPastOrganizations);
+        emailInput.addEventListener('blur', fetchPastOrganizations);
+    }
+    
+    // Fetch on page load if values are already present (from old input)
+    if ((userIdInput && userIdInput.value) || (emailInput && emailInput.value)) {
+        fetchPastOrganizations();
+    }
 });
 </script>
 @endpush

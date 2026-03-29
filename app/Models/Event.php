@@ -17,8 +17,14 @@ class Event extends Model
     {
         return $this->hasMany(EventParticipant::class);
     }
+
+    public function files()
+    {
+        return $this->hasMany(EventFile::class);
+    }
     protected $fillable = [
-        'name', 'description', 'event_date', 'end_date', 'location', 'organization_id', 'status', 'start_time', 'end_time', 'qr_code_path', 'created_by', 'decline_reason'
+        'name', 'description', 'event_date', 'end_date', 'location', 'organization_id', 'coordinator_name', 'status', 'start_time', 'end_time', 'qr_code_path', 'created_by', 'decline_reason', 'required_student_participation',
+        'monitoring_started', 'monitoring_started_at', 'attended_threshold_minutes', 'late_threshold_minutes', 'absent_threshold_minutes', 'points'
     ];
 
     protected $casts = [
@@ -26,6 +32,9 @@ class Event extends Model
         'end_date' => 'date',
         'start_time' => 'datetime',
         'end_time' => 'datetime',
+        'required_student_participation' => 'boolean',
+        'monitoring_started' => 'boolean',
+        'monitoring_started_at' => 'datetime',
     ];
 
     public function attendances() {
@@ -38,5 +47,15 @@ class Event extends Model
 
     public function organization() {
         return $this->belongsTo(Organization::class);
+    }
+
+    public function feedback()
+    {
+        return $this->hasMany(EventFeedback::class);
+    }
+
+    public function studentPoints()
+    {
+        return $this->hasMany(StudentPoint::class);
     }
 }

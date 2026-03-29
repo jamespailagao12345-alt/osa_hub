@@ -1,8 +1,9 @@
 @extends('layouts.app')
 
 @php
-    $designation = auth()->user()->designation ?? optional(auth()->user()->staffProfile)->designation ?? null;
-    $fullName = trim((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? ''));
+    $user = auth()->user();
+    $designation = $user->designation ?? optional($user->staffProfile)->designation ?? null;
+    $fullName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
     $computedTitle = $designation ? ($designation . ' — ' . $fullName) : $fullName;
 @endphp
 @section('title', $computedTitle)
@@ -10,9 +11,15 @@
 @section('content')
 <div class="container-fluid">
     <div class="row">
+        @include('admin.partials.sidebar')
         <!-- Main Content -->
-        <main id="adminMain" class="col-12">
-            
+        <main id="adminMain" class="col-md-10">
+            <!-- Dashboard Header Component -->
+            <x-dashboard-header 
+                :name="$fullName"
+                :designation="$designation"
+                :roleLabel="'Admin Dashboard'"
+            />
 
             <!-- Quick Actions -->
             <div class="mb-4 wow fadeInUp" data-wow-delay="100ms">
@@ -26,71 +33,127 @@
                         margin: 0 auto;
                         max-width: 100%;
                     }
-                    .quick-actions-container > div:first-child,
-                    .quick-actions-container > div:nth-child(2),
-                    .quick-actions-container > div:nth-child(3),
-                    .quick-actions-container > div:nth-child(4) {
+                    .quick-actions-container > div {
                         flex: 0 1 calc((100% / 4) - (6rem / 4));
                         min-width: 200px;
+                        max-width: calc((100% / 4) - (6rem / 4));
                         padding: 0;
-                    }
-                    .quick-actions-container > div:nth-child(n+5) {
-                        flex: 0 1 calc((100% / 3) - (4rem / 3));
-                        min-width: 220px;
-                        padding: 0;
+                        display: flex;
                     }
                     .quick-actions-container .btn {
-                        padding: 1.5rem 2rem;
-                        font-size: 1.3rem;
-                        min-height: 80px;
+                        width: 100%;
+                        padding: 1.5rem 1rem;
+                        font-size: 1.1rem;
+                        min-height: 140px;
+                        max-height: 140px;
                         font-weight: 600;
-                        line-height: 1.5;
+                        line-height: 1.4;
+                        display: flex;
+                        flex-direction: column;
+                        align-items: center;
+                        justify-content: center;
+                        white-space: normal;
+                        word-wrap: break-word;
+                        text-align: center;
+                        gap: 0.75rem;
+                        background-color: #ffc107 !important; /* Yellow background */
+                        border: 2px solid midnightblue !important;
+                        border-color: midnightblue !important;
+                        color: midnightblue !important;
+                    }
+                    .quick-actions-container .btn-group {
+                        width: 100%;
+                        display: flex;
+                    }
+                    .quick-actions-container .btn-group > .btn:first-child {
+                        flex: 1;
+                        min-width: 0;
+                        padding-right: 0.5rem;
+                    }
+                    .quick-actions-container .btn-group .btn:first-child {
+                        border-top-right-radius: 0;
+                        border-bottom-right-radius: 0;
+                    }
+                    .quick-actions-container .btn-group .dropdown-toggle-split {
+                        flex: 0 0 auto;
+                        min-width: 30px;
+                        max-width: 30px;
+                        padding: 0.5rem;
+                        font-size: 0.9rem;
+                        background-color: midnightblue !important;
+                        border-color: midnightblue !important;
+                        color: white !important;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        min-height: 140px;
+                        border-top-left-radius: 0;
+                        border-bottom-left-radius: 0;
+                        border-left: none !important;
                     }
                     .quick-actions-container .btn i {
-                        font-size: 1.4rem;
-                        margin-right: 0.5rem;
+                        font-size: 3rem;
+                        margin-right: 0;
+                        margin-bottom: 0;
+                        flex-shrink: 0;
+                        color: midnightblue !important;
+                        display: flex;
+                        align-items: center;
+                        justify-content: center;
+                        width: 80px;
+                        height: 80px;
+                        background-color: white;
+                        border: 3px solid midnightblue;
+                        border-radius: 8px;
+                    }
+                    .quick-actions-container .btn span {
+                        display: block;
+                        text-align: center;
+                        font-weight: 600;
+                        color: midnightblue !important;
+                        margin-top: 0;
+                        line-height: 1.2;
+                        text-transform: uppercase;
+                        letter-spacing: 0.5px;
                     }
                     .quick-actions-container .btn,
                     .quick-actions-container .btn-primary,
                     .quick-actions-container .btn-secondary {
-                        background-color: midnightblue !important;
+                        background-color: #ffc107 !important; /* Yellow */
                         border-color: midnightblue !important;
-                        color: white !important;
+                        color: midnightblue !important;
                     }
                     .quick-actions-container .btn:hover,
                     .quick-actions-container .btn-primary:hover,
                     .quick-actions-container .btn-secondary:hover {
-                        background-color: #1a237e !important;
-                        border-color: #1a237e !important;
-                        color: white !important;
+                        background-color: #ffca2c !important; /* Lighter yellow on hover */
+                        border-color: midnightblue !important;
+                        color: midnightblue !important;
+                        transform: translateY(-2px);
+                        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
                     }
                     .quick-actions-container .btn:focus,
                     .quick-actions-container .btn-primary:focus,
                     .quick-actions-container .btn-secondary:focus {
-                        background-color: midnightblue !important;
+                        background-color: #ffc107 !important;
                         border-color: midnightblue !important;
-                        color: white !important;
+                        color: midnightblue !important;
                         box-shadow: 0 0 0 0.2rem rgba(25, 25, 112, 0.5);
                     }
                     .quick-actions-container .btn:active,
                     .quick-actions-container .btn-primary:active,
                     .quick-actions-container .btn-secondary:active {
-                        background-color: #0d0d52 !important;
-                        border-color: #0d0d52 !important;
-                        color: white !important;
+                        background-color: #ffb300 !important; /* Darker yellow */
+                        border-color: midnightblue !important;
+                        color: midnightblue !important;
                     }
                     @media (max-width: 1400px) {
                         .quick-actions-container {
                             padding: 3.5rem 6rem;
                         }
-                        .quick-actions-container > div:first-child,
-                        .quick-actions-container > div:nth-child(2),
-                        .quick-actions-container > div:nth-child(3),
-                        .quick-actions-container > div:nth-child(4) {
+                        .quick-actions-container > div {
                             flex: 0 1 calc((100% / 4) - (6rem / 4));
-                        }
-                        .quick-actions-container > div:nth-child(n+5) {
-                            flex: 0 1 calc((100% / 3) - (4rem / 3));
+                            max-width: calc((100% / 4) - (6rem / 4));
                         }
                     }
                     @media (max-width: 992px) {
@@ -100,15 +163,24 @@
                         }
                         .quick-actions-container > div {
                             flex: 0 1 calc((100% / 3) - (4rem / 3)) !important;
+                            max-width: calc((100% / 3) - (4rem / 3)) !important;
                             margin-bottom: 0;
                         }
                         .quick-actions-container .btn {
-                            padding: 1.2rem 1.8rem;
-                            font-size: 1.2rem;
-                            min-height: 70px;
+                            padding: 1.2rem 0.8rem;
+                            font-size: 1rem;
+                            min-height: 120px;
+                            max-height: 120px;
+                        }
+                        .quick-actions-container .btn-group .dropdown-toggle-split {
+                            min-width: 28px;
+                            max-width: 28px;
+                            padding: 0.4rem;
                         }
                         .quick-actions-container .btn i {
-                            font-size: 1.3rem;
+                            font-size: 2.5rem;
+                            width: 70px;
+                            height: 70px;
                         }
                     }
                     @media (max-width: 768px) {
@@ -118,15 +190,24 @@
                         }
                         .quick-actions-container > div {
                             flex: 0 1 calc((100% / 2) - 1rem) !important;
+                            max-width: calc((100% / 2) - 1rem) !important;
                             margin-bottom: 0;
                         }
                         .quick-actions-container .btn {
-                            padding: 1rem 1.5rem;
-                            font-size: 1.1rem;
-                            min-height: 65px;
+                            padding: 1rem 0.7rem;
+                            font-size: 0.95rem;
+                            min-height: 110px;
+                            max-height: 110px;
+                        }
+                        .quick-actions-container .btn-group .dropdown-toggle-split {
+                            min-width: 26px;
+                            max-width: 26px;
+                            padding: 0.35rem;
                         }
                         .quick-actions-container .btn i {
-                            font-size: 1.2rem;
+                            font-size: 2rem;
+                            width: 60px;
+                            height: 60px;
                         }
                     }
                     @media (max-width: 576px) {
@@ -136,25 +217,40 @@
                         }
                         .quick-actions-container > div {
                             flex: 0 1 100% !important;
+                            max-width: 100% !important;
                             margin-bottom: 0;
                         }
                         .quick-actions-container .btn {
-                            padding: 0.9rem 1.2rem;
-                            font-size: 1rem;
-                            min-height: 60px;
+                            padding: 1rem 0.6rem;
+                            font-size: 0.9rem;
+                            min-height: 100px;
+                            max-height: 100px;
                             margin-bottom: 0;
                         }
+                        .quick-actions-container .btn-group .dropdown-toggle-split {
+                            min-width: 24px;
+                            max-width: 24px;
+                            padding: 0.3rem;
+                        }
                         .quick-actions-container .btn i {
-                            font-size: 1.1rem;
+                            font-size: 1.8rem;
+                            width: 50px;
+                            height: 50px;
                         }
                     }
                 </style>
                 <div class="quick-actions-container">
-                    @php $isAdmin = auth()->user()?->role === 4; @endphp
-                    @if($isAdmin)
+                    @php 
+                        $isAdmin = auth()->user()?->role === 4;
+                        $userDesignation = auth()->user()->designation ?? optional(auth()->user()->staffProfile)->designation ?? null;
+                        $isOSAStaff = strcasecmp($userDesignation, 'OSA Staff') === 0;
+                        $showAdminUI = $isAdmin || $isOSAStaff;
+                    @endphp
+                    @if($showAdminUI)
                         <div>
                             <a href="{{ route('admin.appointments.index') }}" class="btn btn-primary w-100">
-                                <i class="mai-calendar"></i> Appointments
+                                <i class="bi bi-calendar-check"></i>
+                                <span>Appointments</span>
                             </a>
                         </div>
                         
@@ -162,23 +258,24 @@
                         <div>
                             <div class="btn-group w-100">
                                 <a href="{{ route('admin.events.index') }}" class="btn btn-primary">
-                                    <i class="mai-calendar"></i> Events
+                                    <i class="bi bi-calendar-event"></i>
+                                    <span>Events</span>
                                 </a>
                                 <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <span class="sr-only">Toggle dropdown</span>
                                 </button>
                                 <div class="dropdown-menu">
-                                    <a class="dropdown-item" href="{{ route('admin.events.index') }}"><i class="mai-calendar"></i> Events</a>
+                                    <a class="dropdown-item" href="{{ route('admin.events.index') }}"><i class="bi bi-calendar-event"></i> Events</a>
                                     <div class="dropdown-divider"></div>
-                                    <a class="dropdown-item" href="{{ route('admin.events.create') }}"><i class="mai-add"></i> Create Event</a>
-                                    <a class="dropdown-item" href="{{ route('admin.participants.export') }}"><i class="mai-download"></i> Export Participation</a>
+                                    <a class="dropdown-item" href="{{ route('admin.events.create') }}"><i class="bi bi-plus-circle"></i> Create Event</a>
                                 </div>
                             </div>
                         </div>
                         
                         <div>
                             <a href="{{ route('admin.calendar') }}" class="btn btn-primary w-100">
-                                <i class="mai-calendar"></i> Calendar
+                                <i class="bi bi-calendar3"></i>
+                                <span>Calendar</span>
                             </a>
                         </div>
                         
@@ -186,45 +283,65 @@
                         <div>
                             <div class="btn-group w-100">
                                 <a href="{{ route('admin.staff.dashboard') }}" class="btn btn-primary">
-                                    <i class="mai-speedometer"></i> Staff Dashboard
+                                    <i class="bi bi-speedometer2"></i>
+                                    <span>Staff Dashboard</span>
                                 </a>
                                 <button type="button" class="btn btn-primary dropdown-toggle dropdown-toggle-split" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                                     <span class="sr-only">Toggle dropdown</span>
                                 </button>
                                 <div class="dropdown-menu">
-                                    <a class="dropdown-item" href="{{ route('admin.staff.dashboard') }}"><i class="mai-speedometer"></i> Staff Dashboards</a>
+                                    <a class="dropdown-item" href="{{ route('admin.staff.dashboard') }}"><i class="bi bi-speedometer2"></i> Staff Dashboards</a>
                                     <div class="dropdown-divider"></div>
-                                    <a class="dropdown-item" href="{{ route('admin.show-staff') }}"><i class="mai-people"></i> Show Staff</a>
-                                    <a class="dropdown-item" href="{{ route('admin.add-staff') }}"><i class="mai-add"></i> Add Staff</a>
-                                    <a class="dropdown-item" href="{{ route('admin.assistants.index') }}"><i class="mai-people"></i> Show Assistant Staff</a>
+                                    <a class="dropdown-item" href="{{ route('admin.show-staff') }}"><i class="bi bi-people"></i> Staff List</a>
+                                    <a class="dropdown-item" href="{{ route('admin.add-staff') }}"><i class="bi bi-person-plus"></i> Add Staff</a>
+                                    <a class="dropdown-item" href="{{ route('admin.student-leaders.index') }}"><i class="bi bi-person-badge"></i> Show Student Leaders</a>
                                 </div>
                             </div>
                         </div>
                         
                         <div>
                             <a href="{{ route('admin.show-students-list') }}" class="btn btn-secondary w-100">
-                                <i class="mai-book"></i> Show Students
+                                <i class="bi bi-people-fill"></i>
+                                <span>Show Students</span>
                             </a>
                         </div>
                         <div>
                             <a href="{{ route('admin.organizations.index') }}" class="btn btn-secondary w-100">
-                                <i class="mai-people"></i> Organizations
+                                <i class="bi bi-building"></i>
+                                <span>Organizations</span>
                             </a>
                         </div>
                         <div>
                             <a href="{{ route('admin.organizational-structure') }}" class="btn btn-primary w-100">
-                                <i class="bi bi-diagram-3"></i> Organizational Structure
+                                <i class="bi bi-diagram-3"></i>
+                                <span>Organizational Structure</span>
                             </a>
                         </div>
+                        <div>
+                            <a href="{{ route('admin.files.index') }}" class="btn btn-primary w-100">
+                                <i class="bi bi-folder"></i>
+                                <span>Files</span>
+                            </a>
+                        </div>
+                        @if($isOSAStaff)
+                        <div>
+                            <a href="{{ route('staff.organizations.index') }}" class="btn btn-primary w-100">
+                                <i class="bi bi-building"></i>
+                                <span>My Organization</span>
+                            </a>
+                        </div>
+                        @endif
                     @else
                         <div>
                             <a href="{{ route('admin.staff.dashboard') }}" class="btn btn-primary w-100">
-                                <i class="mai-speedometer"></i> Staff Dashboards
+                                <i class="bi bi-speedometer2"></i>
+                                <span>Staff Dashboards</span>
                             </a>
                         </div>
                         <div>
                             <a href="{{ route('admin.organizational-structure') }}" class="btn btn-primary w-100">
-                                <i class="bi bi-diagram-3"></i> Organizational Structure
+                                <i class="bi bi-diagram-3"></i>
+                                <span>Organizational Structure</span>
                             </a>
                         </div>
                     @endif
@@ -278,7 +395,7 @@
                                 <thead>
                                     <tr align="center" style="background-color:midnightblue; color:white">
                                         <th>Event</th>
-                                        <th>Creator</th>
+                                        <th>Coordinator</th>
                                         <th>Date</th>
                                         <th>Start Time</th>
                                         <th>End Time</th>
@@ -289,7 +406,17 @@
                                     @foreach($pendingEvents as $event)
                                     <tr>
                                         <td>{{ $event->name }}</td>
-                                        <td>{{ $event->creator->first_name }} {{ $event->creator->last_name }}</td>
+                                        <td>
+                                            @if($event->organization_id && $event->organization)
+                                                {{ $event->organization->name }}
+                                            @elseif($event->coordinator_name)
+                                                {{ $event->coordinator_name }}
+                                            @elseif($event->creator)
+                                                {{ $event->creator->first_name }} {{ $event->creator->last_name }}
+                                            @else
+                                                <span class="text-muted">N/A</span>
+                                            @endif
+                                        </td>
                                         <td>
                                             @if($event->event_date)
                                                 {{ \Carbon\Carbon::parse($event->event_date)->format('Y-m-d') }}

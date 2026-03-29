@@ -10,12 +10,12 @@
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h4 mb-0">Event QR Code</h2>
         <a href="{{ route('admin.staff.dashboard.StudentOrgModerator') }}" class="btn btn-secondary">
-          <i class="bi bi-arrow-left"></i> Back to Dashboard
+          <i class="bi bi-arrow-left"></i> Back
         </a>
       </div>
 
       <div class="card">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header" style="background-color: midnightblue; color: white;">
           <h5 class="mb-0">{{ $event->name }}</h5>
         </div>
         <div class="card-body text-center">

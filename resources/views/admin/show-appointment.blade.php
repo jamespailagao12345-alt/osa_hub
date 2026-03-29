@@ -4,7 +4,7 @@
 
 @section('content')
   <div class="admin-back-btn-wrap">
-    <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Dashboard</a>
+    <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back</a>
   </div>
   <div class="container-fluid">
     <div class="row">

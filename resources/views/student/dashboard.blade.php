@@ -35,7 +35,7 @@
                                                 <div class="card">
                                                     <div class="card-header">{{ __('Register Organization') }}</div>
                                                     <div class="card-body">
-                                                        <form method="POST" action="/student/organization-registration-request">
+                                                        <form method="POST" action="{{ route('student.organization-registration-request.store') }}">
                                                             @csrf
                                                             <!-- Organization Selection -->
                                                             <div class="row mb-3">
@@ -50,6 +50,14 @@
                                                                         @endforeach
                                                                     </select>
                                                                     <small class="text-muted d-block mt-1">You are automatically a member of your department's organization.</small>
+                                                                </div>
+                                                            </div>
+                                                            <!-- Position -->
+                                                            <div class="row mb-3">
+                                                                <label class="col-md-4 col-form-label text-md-end">Position (Optional)</label>
+                                                                <div class="col-md-6">
+                                                                    <input type="text" name="position" class="form-control" value="{{ old('position') }}" placeholder="e.g., President, Member, Secretary">
+                                                                    <small class="text-muted d-block mt-1">Leave blank if no specific position.</small>
                                                                 </div>
                                                             </div>
                                                             <!-- Details -->
@@ -133,7 +141,14 @@
                     </div>
                     <div class="mb-3">
                         <h5>Organizational Dashboard</h5>
-                        @if(auth()->user()->hasAssistantAccess())
+                        @php
+                            $user = auth()->user();
+                            $hasRole3 = (int) $user->role === 3;
+                            $hasAssistantAccess = $user->hasAssistantAccess();
+                        @endphp
+                        @if($hasRole3)
+                            <a href="{{ route('student-leader.dashboard') }}" class="btn w-100" style="background-color: midnightblue; border-color: midnightblue; color: white; text-decoration: none; display: block;">Open</a>
+                        @elseif($hasAssistantAccess)
                             <button type="button" class="btn w-100" style="background-color: midnightblue; border-color: midnightblue; color: white;" data-bs-toggle="modal" data-bs-target="#assistantSwitchModal">Open</button>
                         @else
                             <button type="button" class="btn w-100" style="background-color: midnightblue; border-color: midnightblue; color: white; opacity: 0.6;" disabled>Unaccessible</button>
@@ -144,11 +159,87 @@
                         <h5>My QR Code</h5>
                         <button type="button" class="btn w-100" style="background-color: midnightblue; border-color: midnightblue; color: white;" data-bs-toggle="modal" data-bs-target="#qrModal">View QR</button>
                     </div>
+                    <div class="mb-3">
+                        <h5>My Reports</h5>
+                        <a href="{{ route('reports.index') }}" class="btn w-100" style="background-color: midnightblue; border-color: midnightblue; color: white;">View Reports</a>
+                    </div>
                 </div>
             </div>
         </aside>
         <!-- Main Content -->
         <main class="col-md-9">
+            <!-- Student Profile Section with Image -->
+            <div class="card mb-4" style="border: none; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-3 text-center">
+                            @php
+                                $user = auth()->user();
+                                $student = \App\Models\Student::where('user_id', $user->id)->first();
+                                $profileImage = $user->image ?? ($student ? $student->personal_data_sheet_image : null);
+                                $fullName = trim(($user->first_name ?? '') . ' ' . ($user->middle_name ?? '') . ' ' . ($user->last_name ?? ''));
+                                
+                                // Get initials for avatar
+                                $initials = '';
+                                $firstInitial = strtoupper(substr($user->first_name ?? '', 0, 1));
+                                $lastInitial = strtoupper(substr($user->last_name ?? '', 0, 1));
+                                $initials = $firstInitial . $lastInitial;
+                            @endphp
+                            <div class="mb-3">
+                                @if($profileImage)
+                                    <img src="{{ \Illuminate\Support\Facades\Storage::disk('public')->url($profileImage) }}" 
+                                         alt="{{ $fullName }}" 
+                                         class="rounded-circle" 
+                                         style="width: 120px; height: 120px; object-fit: cover; border: 3px solid midnightblue;">
+                                @else
+                                    <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center mx-auto" 
+                                         style="width: 120px; height: 120px; border: 3px solid midnightblue;">
+                                        <span class="text-white" style="font-size: 2.5rem; font-weight: bold;">{{ $initials ?: 'S' }}</span>
+                                    </div>
+                                @endif
+                            </div>
+                            <a href="{{ route('student.profile') }}" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-pencil me-1"></i>Edit Profile
+                            </a>
+                        </div>
+                        <div class="col-md-9">
+                            <!-- Dashboard Header Component -->
+                            <x-dashboard-header 
+                                :name="$fullName"
+                                :designation="$designation"
+                                :roleLabel="'My Student Dashboard'"
+                                :align="'left'"
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Points Display -->
+            <div class="card mb-4 wow fadeInUp" data-wow-delay="100ms">
+                <div class="card-header" style="background-color: #198754; color: white;">
+                    <h5 class="mb-0"><i class="bi bi-star-fill me-2"></i>My Points</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row align-items-center">
+                        <div class="col-md-6">
+                            <h2 class="mb-0" style="color: #198754; font-size: 3rem;">{{ $totalPoints ?? 0 }}</h2>
+                            <p class="text-muted mb-0">Total Points Earned</p>
+                        </div>
+                        <div class="col-md-6 text-end">
+                            <a href="{{ route('student.events.feedback.index') }}" class="btn btn-primary">
+                                <i class="bi bi-chat-left-text me-2"></i>Submit Event Feedback
+                            </a>
+                        </div>
+                    </div>
+                    <div class="mt-3">
+                        <small class="text-muted">
+                            <i class="bi bi-info-circle me-1"></i>
+                            Earn points by submitting feedback for events you participated in.
+                        </small>
+                    </div>
+                </div>
+            </div>
             
             <!-- Upcoming Events -->
             <div class="card mb-4 wow fadeInUp" data-wow-delay="200ms">
@@ -236,10 +327,17 @@
             <a href="{{ route('student.events.index') }}" class="btn btn-secondary mt-2">View Events</a>
             <div class="card mb-4 wow fadeInUp" data-wow-delay="400ms">
                 <div class="card-header bg-success text-white">
-                    <h5 class="mb-0">Participation History</h5>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Participation History</h5>
+                        <a href="{{ route('student.events.feedback.index') }}" class="btn btn-sm btn-light">
+                            <i class="bi bi-chat-left-text me-1"></i>Submit Feedback
+                        </a>
+                    </div>
                 </div>
                 <div class="card-body">
                     @if($participations->isEmpty())
+                        <p class="text-muted">No participation history yet.</p>
+                    @else
                         <div class="table-responsive">
                             <table class="table table-hover">
                                 <thead>
@@ -247,18 +345,48 @@
                                         <th>Event</th>
                                         <th>Date</th>
                                         <th>Status</th>
+                                        <th>Feedback</th>
                                     </tr>
                                 </thead>
                                 <tbody>
                                     @foreach($participations as $part)
+                                    @php
+                                        $event = $part->event;
+                                        $hasFeedback = \App\Models\EventFeedback::where('event_id', $event->id)
+                                            ->where('user_id', auth()->id())
+                                            ->exists();
+                                    @endphp
                                     <tr>
-                                        <td>{{ $part->event->title }}</td>
-                                        <td>{{ $part->event->event_date->format('M d, Y') }}</td>
+                                        <td><strong>{{ $event->name ?? $event->title ?? 'N/A' }}</strong></td>
                                         <td>
-                                            @if($part->qr_scanned)
-                                                <span class="badge bg-success">Attended</span>
+                                            @if($event->start_time)
+                                                {{ \Carbon\Carbon::parse($event->start_time)->format('M d, Y') }}
+                                            @elseif($event->event_date)
+                                                {{ $event->event_date->format('M d, Y') }}
+                                            @else
+                                                N/A
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($part->attendance_status)
+                                                <span class="badge bg-{{ $part->attendance_status === 'Attended' ? 'success' : ($part->attendance_status === 'Late' ? 'warning' : 'danger') }}">
+                                                    {{ $part->attendance_status }}
+                                                </span>
+                                            @elseif($part->qr_scanned)
+                                                <span class="badge bg-success">Scanned</span>
                                             @else
                                                 <span class="badge bg-warning text-dark">Registered</span>
+                                            @endif
+                                        </td>
+                                        <td>
+                                            @if($hasFeedback)
+                                                <span class="badge bg-success">Submitted</span>
+                                            @elseif($event->points && $event->points > 0)
+                                                <a href="{{ route('student.events.feedback.create', $event->id) }}" class="btn btn-sm btn-primary">
+                                                    Submit ({{ $event->points }} pts)
+                                                </a>
+                                            @else
+                                                <span class="text-muted">-</span>
                                             @endif
                                         </td>
                                     </tr>
@@ -302,7 +430,12 @@
                 </div>
                 <div class="modal-body">
                     <p class="mb-2">To access the Organizational Dashboard, confirm your password.</p>
-                    <input type="password" name="assistant_password" class="form-control" placeholder="Password" required />
+                    <div class="position-relative">
+                        <input type="password" name="assistant_password" id="assistant_password" class="form-control" placeholder="Password" required style="padding-right: 2.5rem;" />
+                        <button type="button" class="btn btn-link position-absolute p-0" id="toggleAssistantPassword" style="border: none; background: none; cursor: pointer; z-index: 10; right: 0.75rem; top: 50%; transform: translateY(-50%); height: auto; line-height: 1;">
+                            <i class="bi bi-eye" id="assistantPasswordIcon" style="font-size: 0.875rem; vertical-align: middle; color: #6c757d;"></i>
+                        </button>
+                    </div>
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
@@ -316,28 +449,6 @@
 
 @push('styles')
 <style>
-    /* Fix the page to prevent scrolling - page stays fixed, only calendar moves */
-    html, body {
-        height: 100%;
-        overflow: hidden;
-    }
-    
-    body {
-        position: fixed;
-        width: 100%;
-    }
-    
-    .container-fluid {
-        height: 100vh;
-        overflow-y: auto;
-        overflow-x: hidden;
-        position: relative;
-    }
-    
-    .container-fluid > .row {
-        min-height: 100vh;
-    }
-    
     /* Calendar sliding animation */
     #calendar-months-container {
         position: relative;
@@ -721,5 +832,18 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
     });
+    // Password visibility toggle for assistant password modal
+    const toggleAssistantPasswordBtn = document.getElementById('toggleAssistantPassword');
+    const assistantPasswordField = document.getElementById('assistant_password');
+    const assistantPasswordIcon = document.getElementById('assistantPasswordIcon');
+    
+    if (toggleAssistantPasswordBtn && assistantPasswordField) {
+        toggleAssistantPasswordBtn.addEventListener('click', function() {
+            const type = assistantPasswordField.getAttribute('type') === 'password' ? 'text' : 'password';
+            assistantPasswordField.setAttribute('type', type);
+            assistantPasswordIcon.classList.toggle('bi-eye');
+            assistantPasswordIcon.classList.toggle('bi-eye-slash');
+        });
+    }
 </script>
 @endpush

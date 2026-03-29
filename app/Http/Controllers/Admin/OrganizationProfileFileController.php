@@ -26,6 +26,12 @@ class OrganizationProfileFileController extends Controller
         $hasAccess = $this->checkOrganizationAccess($user, $organizationId);
         
         if (!$hasAccess) {
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'You do not have access to upload files for this organization.'
+                ], 403);
+            }
             return redirect()->route('admin.organizations.profile', $organizationId)
                 ->with('file_error', 'You do not have access to upload files for this organization.');
         }
@@ -71,6 +77,16 @@ class OrganizationProfileFileController extends Controller
                 'uploaded_by' => $user->id,
             ]);
             
+            // Return JSON for AJAX requests, redirect for normal requests
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'File uploaded successfully.',
+                    'file_name' => $file->getClientOriginalName(),
+                    'file_category' => $request->file_category
+                ]);
+            }
+            
             return redirect()->route('admin.organizations.profile', $organizationId)
                 ->with('file_success', 'File uploaded successfully.');
         } catch (\Exception $e) {
@@ -81,6 +97,14 @@ class OrganizationProfileFileController extends Controller
                 'organization_id' => $organizationId,
                 'error' => $e->getMessage(),
             ]);
+            
+            // Return JSON for AJAX requests, redirect for normal requests
+            if ($request->ajax() || $request->wantsJson()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Failed to upload file. Please try again.'
+                ], 422);
+            }
             
             return redirect()->route('admin.organizations.profile', $organizationId)
                 ->with('file_error', 'Failed to upload file. Please try again.');

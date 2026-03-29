@@ -9,13 +9,15 @@ class AssistantAssignment extends Model
 {
     use HasFactory;
 
+    protected $table = 'student_leaders_information';
+
     protected $fillable = [
         'user_id',
         'organization_id',
         'department_id',
         'position',
         'supervisor_id',
-        'active',
+        'is_active',
     ];
 
     public function user()

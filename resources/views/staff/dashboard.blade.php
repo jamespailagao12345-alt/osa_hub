@@ -5,6 +5,18 @@
     $designation = auth()->user()->designation ?? optional(auth()->user()->staffProfile)->designation ?? null;
     $fullName = trim((auth()->user()->first_name ?? '') . ' ' . (auth()->user()->last_name ?? ''));
     $computedTitle = $designation ? ($designation . ' — ' . $fullName) : $fullName;
+    $isAdmin = auth()->user()?->role === 4;
+    // Check if user is OSA Staff
+    $isOSAStaff = false;
+    if (auth()->user() && (int) auth()->user()->role === 2) {
+        $staffRecord = \App\Models\Staff::whereRaw('LOWER(email) = ?', [strtolower(trim(auth()->user()->email))])->first();
+        $userDesignation = auth()->user()->designation
+            ?? optional(auth()->user()->staffProfile)->designation
+            ?? ($staffRecord ? $staffRecord->designation : null);
+        $normalizedDesignation = trim($userDesignation ?? '');
+        $isOSAStaff = strcasecmp($normalizedDesignation, 'OSA Staff') === 0;
+    }
+    $showAdminUI = $isAdmin || $isOSAStaff;
 @endphp
 
 @section('title', 'Staff Dashboard')
@@ -12,21 +24,37 @@
 @section('content')
 <div class="container-fluid">
     <div class="row">
-        <section class="col-12">
-            <div class="mb-3">
-                <button onclick="window.history.back()" class="btn btn-secondary">
-                    <i class="bi bi-arrow-left"></i> Back
-                </button>
-            </div>
+        @include('staff.partials.sidebar')
+        <main id="staffMain" class="col-md-10">
+            @if($showAdminUI)
+                <div class="admin-back-btn-wrap">
+                    <button onclick="window.history.back()" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Back
+                    </button>
+                </div>
+            @endif
             
             @php
                 $user = \Illuminate\Support\Facades\Auth::user();
                 $role = $user->role ?? null;
+                // Use case-insensitive email lookup to match other parts of the codebase
+                $staffRecord = \App\Models\Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($user->email))])->first();
                 $designation = $user->designation 
                     ?? optional($user->staffProfile)->designation 
-                    ?? \App\Models\Staff::where('email', $user->email)->value('designation');
+                    ?? ($staffRecord ? $staffRecord->designation : null);
                 $isStudentOrgModerator = strcasecmp($designation ?? '', 'Student Org. Moderator') === 0;
+                $fullName = trim(($user->first_name ?? '') . ' ' . ($user->last_name ?? ''));
+                
+                // Check if designation is "Nurse"
+                $isNurse = strcasecmp($designation ?? '', 'Nurse') === 0;
             @endphp
+
+            <!-- Dashboard Header Component -->
+            <x-dashboard-header 
+                :name="$fullName"
+                :designation="$designation"
+                :roleLabel="$designation ? ($designation . ' Dashboard') : 'My Staff Dashboard'"
+            />
 
             <!-- Quick Actions -->
             <div class="mb-4 wow fadeInUp" data-wow-delay="100ms">
@@ -154,8 +182,8 @@
                                     <a class="dropdown-item" href="{{ route('staff.organizations.index') }}"><i class="bi bi-building"></i> My Organizations</a>
                                     <div class="dropdown-divider"></div>
                                     <a class="dropdown-item" href="{{ route('staff.files.index') }}"><i class="bi bi-folder"></i> My Files</a>
-                                    <a class="dropdown-item" href="{{ route('staff.assistants.index') }}"><i class="bi bi-people"></i> My Assistant Staff</a>
-                                    <a class="dropdown-item" href="{{ route('staff.assistants.create') }}"><i class="bi bi-person-plus"></i> Add Assistant</a>
+                                    <a class="dropdown-item" href="{{ route('staff.student-leaders.index') }}"><i class="bi bi-people"></i> My Student Leaders</a>
+                                    <a class="dropdown-item" href="{{ route('staff.student-leaders.create') }}"><i class="bi bi-person-plus"></i> Add Student Leader</a>
                                 </div>
                             </div>
                         </div>
@@ -221,8 +249,7 @@
                         <h5 class="mb-0">Quick Actions</h5>
                     </div>
                     <div class="list-group list-group-flush">
-                        @php $isAdmin = auth()->user()?->role === 4; @endphp
-                        @if($isAdmin)
+                        @if($showAdminUI)
                             <a class="list-group-item list-group-item-action {{ request()->routeIs('admin.appointments.*') ? 'active' : '' }}" href="{{ route('admin.appointments.index') }}">
                                 <i class="bi bi-calendar"></i> Appointments
                             </a>
@@ -244,8 +271,8 @@
                             <a class="list-group-item list-group-item-action {{ request()->routeIs('admin.add-staff') ? 'active' : '' }}" href="{{ route('admin.add-staff') }}">
                                 <i class="bi bi-person-plus"></i> Add Staff
                             </a>
-                            <a class="list-group-item list-group-item-action {{ request()->routeIs('admin.assistants.*') ? 'active' : '' }}" href="{{ route('admin.assistants.index') }}">
-                                <i class="bi bi-people"></i> Show Assistant Staff
+                            <a class="list-group-item list-group-item-action {{ request()->routeIs('admin.student-leaders.*') ? 'active' : '' }}" href="{{ route('admin.student-leaders.index') }}">
+                                <i class="bi bi-people"></i> Show Student Leaders
                             </a>
                             <a class="list-group-item list-group-item-action {{ request()->routeIs('admin.show-students-list') ? 'active' : '' }}" href="{{ route('admin.show-students-list') }}">
                                 <i class="bi bi-book"></i> Show Students
@@ -261,7 +288,8 @@
                 </div>
             </div>
 
-        </section>
+
+        </main>
     </div>
 </div>
 

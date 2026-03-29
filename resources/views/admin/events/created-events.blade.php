@@ -7,7 +7,7 @@
     <main class="col-md-10 py-4">
         <div class="admin-back-btn-wrap">
             @if(request()->has('return_to'))
-              <a href="{{ urldecode(request('return_to')) }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Dashboard</a>
+              <a href="{{ urldecode(request('return_to')) }}" class="btn btn-secondary rounded-pill px-3">&lt; Back</a>
             @else
               <a href="{{ route('admin.events.index') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Events</a>
             @endif
@@ -100,7 +100,7 @@
                                     @endif
                                 </td>
                                 <td>{{ $event->location ?? 'N/A' }}</td>
-                                <td>{{ $event->organization->name ?? 'N/A' }}</td>
+                                <td>{{ $event->organization->name ?? ($event->coordinator_name ?? 'N/A') }}</td>
                                 <td>
                                     <a href="{{ route('admin.events.show', $event->id) }}" class="btn btn-sm btn-primary">View Details</a>
                                 </td>
@@ -168,7 +168,7 @@
                                     @endif
                                 </td>
                                 <td>{{ $event->location ?? 'N/A' }}</td>
-                                <td>{{ $event->organization->name ?? 'N/A' }}</td>
+                                <td>{{ $event->organization->name ?? ($event->coordinator_name ?? 'N/A') }}</td>
                                 <td>
                                     <a href="{{ route('admin.events.show', $event->id) }}" class="btn btn-sm btn-primary">View Details</a>
                                 </td>
@@ -188,6 +188,148 @@
                 </div>
                 <div class="mt-3">
                     {{ $declinedEvents->links() }}
+                </div>
+            </div>
+
+            <!-- Admin Created Events Section -->
+            <div class="mb-5">
+                <h3 class="h6 mb-3">
+                    <span class="badge bg-primary me-2">Admin Created</span>
+                    Admin Created Events
+                </h3>
+                <p class="text-muted small mb-3">Events created by administrators</p>
+                
+                <!-- Admin Approved Events Subsection -->
+                <div class="mb-4">
+                    <h4 class="h6 mb-3">
+                        <span class="badge bg-success me-2">Approved</span>
+                        Approved Admin Events
+                        <span class="badge bg-secondary">{{ $adminApprovedEvents->total() ?? 0 }}</span>
+                    </h4>
+                    <div class="bg-white shadow rounded-lg overflow-x-auto">
+                        <table class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Event Name</th>
+                                    <th>Description</th>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Location</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($adminApprovedEvents ?? [] as $event)
+                                <tr>
+                                    <td><strong>{{ $event->name }}</strong></td>
+                                    <td>{{ $event->description ?? 'N/A' }}</td>
+                                    <td>
+                                        @if($event->start_time)
+                                            {{ \Carbon\Carbon::parse($event->start_time)->format('M d, Y h:i A') }}
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($event->end_time)
+                                            {{ \Carbon\Carbon::parse($event->end_time)->format('M d, Y h:i A') }}
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
+                                    <td>{{ $event->location ?? 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ route('admin.events.edit', $event->id) }}" class="btn btn-sm btn-warning me-1">Edit</a>
+                                        <a href="{{ route('admin.events.show', $event->id) }}" class="btn btn-sm btn-primary">View Details</a>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            No approved admin-created events found.
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    @if(isset($adminApprovedEvents) && $adminApprovedEvents->hasPages())
+                    <div class="mt-3">
+                        {{ $adminApprovedEvents->links() }}
+                    </div>
+                    @endif
+                </div>
+                
+                <!-- Admin Declined Events Subsection -->
+                <div class="mb-4">
+                    <h4 class="h6 mb-3">
+                        <span class="badge bg-danger me-2">Declined</span>
+                        Declined Admin Events
+                        <span class="badge bg-secondary">{{ $adminDeclinedEvents->total() ?? 0 }}</span>
+                    </h4>
+                    <div class="bg-white shadow rounded-lg overflow-x-auto">
+                        <table class="table table-striped table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>Event Name</th>
+                                    <th>Description</th>
+                                    <th>Start Time</th>
+                                    <th>End Time</th>
+                                    <th>Location</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @forelse ($adminDeclinedEvents ?? [] as $event)
+                                <tr>
+                                    <td>
+                                        <strong>{{ $event->name }}</strong>
+                                        @if($event->decline_reason)
+                                            <br><small class="text-danger"><i class="bi bi-info-circle me-1"></i><strong>Reason:</strong> {{ \Illuminate\Support\Str::limit($event->decline_reason, 100) }}</small>
+                                        @endif
+                                    </td>
+                                    <td>{{ $event->description ?? 'N/A' }}</td>
+                                    <td>
+                                        @if($event->start_time)
+                                            {{ \Carbon\Carbon::parse($event->start_time)->format('M d, Y h:i A') }}
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
+                                    <td>
+                                        @if($event->end_time)
+                                            {{ \Carbon\Carbon::parse($event->end_time)->format('M d, Y h:i A') }}
+                                        @else
+                                            N/A
+                                        @endif
+                                    </td>
+                                    <td>{{ $event->location ?? 'N/A' }}</td>
+                                    <td>
+                                        <a href="{{ route('admin.events.edit', $event->id) }}" class="btn btn-sm btn-warning me-1">Edit</a>
+                                        <a href="{{ route('admin.events.show', $event->id) }}" class="btn btn-sm btn-primary">View Details</a>
+                                    </td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td colspan="6" class="text-center py-4">
+                                        <div class="text-muted">
+                                            <i class="bi bi-info-circle me-2"></i>
+                                            No declined admin-created events found.
+                                        </div>
+                                    </td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                    </div>
+                    @if(isset($adminDeclinedEvents) && $adminDeclinedEvents->hasPages())
+                    <div class="mt-3">
+                        {{ $adminDeclinedEvents->links() }}
+                    </div>
+                    @endif
                 </div>
             </div>
 

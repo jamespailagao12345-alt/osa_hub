@@ -16,7 +16,7 @@ class CheckOfficer extends Command
         $users = User::where('role', 2)
             ->where(function($q){
                 $q->where('designation', 'Admission Services Officer')
-                  ->orWhereHas('staffProfile', function($qq){ $qq->where('designation','Admission Services Officer'); });
+                  ->orWhereHas('staffProfile', function($qq){ $qq->where('designation','Admission Services Officer'); }); // staffProfile relationship now uses Staff model with staff_information table
             })->get(['id','email','first_name','last_name','role']);
 
         if ($users->isEmpty()) {

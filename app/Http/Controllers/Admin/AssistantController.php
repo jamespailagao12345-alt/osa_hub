@@ -27,9 +27,9 @@ class AssistantController extends Controller
     public function store(Request $request)
     {
         $data = $request->validate([
-            'user_id' => 'required|string|max:50|unique:users',
+            'user_id' => ['required', 'string', 'max:50', 'unique:users', new \App\Rules\UserIdByRole(3)],
             'first_name' => 'required|string|max:100',
-            'middle_name' => 'nullable|string|max:100',
+            'middle_name' => 'nullable|string|max:1|regex:/^[A-Za-z]$/',
             'last_name' => 'required|string|max:100',
             'email' => 'required|email|max:255|unique:users',
             'contact_number' => 'nullable|string|max:20',
@@ -71,6 +71,9 @@ class AssistantController extends Controller
             }
         }
 
+        // Use default password "password"
+        $defaultPassword = 'password';
+        
         $assistant = User::create([
             'user_id' => $data['user_id'],
             'first_name' => $data['first_name'],
@@ -78,7 +81,7 @@ class AssistantController extends Controller
             'last_name' => $data['last_name'],
             'email' => $data['email'],
             'contact_number' => $data['contact_number'] ?? null,
-            'password' => bcrypt($data['password']),
+            'password' => bcrypt($defaultPassword),
             'role' => 3,
             'organization_id' => $data['organization_id'] ?? null,
             'email_verified_at' => now(),
@@ -92,6 +95,23 @@ class AssistantController extends Controller
         
         if (\Illuminate\Support\Facades\Schema::hasTable('organization_user') && !empty($otherOrgIds)) {
             $assistant->otherOrganizations()->sync($otherOrgIds);
+        }
+
+        // Send credentials email
+        try {
+            $name = $assistant->first_name . ' ' . $assistant->last_name;
+            \Illuminate\Support\Facades\Mail::to($assistant->email)->send(new \App\Mail\AccountCredentialsMail(
+                $assistant->email,
+                $defaultPassword,
+                $name,
+                'Assistant'
+            ));
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::warning('Failed to send credentials email to assistant', [
+                'user_id' => $assistant->id,
+                'email' => $assistant->email,
+                'error' => $e->getMessage(),
+            ]);
         }
 
         return redirect()->route('admin.assistants.index')->with('success', 'Assistant created successfully.');
@@ -109,9 +129,9 @@ class AssistantController extends Controller
         $assistant = User::where('role', 3)->findOrFail($id);
 
         $data = $request->validate([
-            'user_id' => 'required|string|max:50|unique:users,user_id,' . $assistant->id,
+            'user_id' => ['required', 'string', 'max:50', 'unique:users,user_id,' . $assistant->id, new \App\Rules\UserIdByRole(3)],
             'first_name' => 'required|string|max:100',
-            'middle_name' => 'nullable|string|max:100',
+            'middle_name' => 'nullable|string|max:1|regex:/^[A-Za-z]$/',
             'last_name' => 'required|string|max:100',
             'email' => 'required|email|max:255|unique:users,email,' . $assistant->id,
             'contact_number' => 'nullable|string|max:20',

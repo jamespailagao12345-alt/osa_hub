@@ -5,20 +5,19 @@
 @section('content')
 <div class="container-fluid">
   <div class="row mb-3">
-    <div class="col-12">
-      <a href="{{ route('staff.organizations.index') }}" class="btn btn-secondary">&larr; Back to Organizations</a>
-      <a href="{{ route('staff.organization-files.create', $organization->id) }}" class="btn btn-primary float-end">
+    <div class="col-12 d-flex justify-content-between align-items-center">
+      <div class="admin-back-btn-wrap" style="margin: 0;">
+        <a href="{{ route('staff.organizations.index') }}" class="btn btn-secondary">&larr; Back to Organizations</a>
+      </div>
+      <a href="{{ route('staff.organization-files.create', $organization->id) }}" class="btn btn-primary">
         <i class="bi bi-cloud-upload"></i> Upload File
       </a>
     </div>
   </div>
 
   <div class="row">
-    <div class="col-md-3 col-lg-2">
-      @include('staff.partials.sidebar')
-    </div>
-    
-    <main class="col-md-9 col-lg-10">
+    @include('staff.partials.sidebar')
+    <main id="staffMain" class="col-md-10">
       <div class="card">
         <div class="card-header" style="background-color: midnightblue; color: white;">
           <h4 class="mb-0">
@@ -101,19 +100,6 @@
               </table>
             </div>
           @endif
-        </div>
-      </div>
-
-      <!-- Folder Structure Info -->
-      <div class="card mt-3">
-        <div class="card-body">
-          <h5 class="card-title"><i class="bi bi-info-circle"></i> File Storage</h5>
-          <p class="card-text">
-            <strong>Storage Location:</strong> <code>storage/app/public/staff/{{ auth()->id() }}/organizations/{{ $organization->id }}/</code>
-          </p>
-          <p class="card-text mb-0">
-            Files are organized in folders by staff member and organization. Each staff member has their own folder for each organization they handle.
-          </p>
         </div>
       </div>
     </main>

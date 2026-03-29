@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="row">
         @include('staff.partials.sidebar')
-        <main class="col-md-10">
+        <main id="staffMain" class="col-md-10">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3>Upload File</h3>
                 <a href="{{ route('staff.files.index') }}" class="btn btn-secondary">

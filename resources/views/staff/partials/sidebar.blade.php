@@ -1,7 +1,198 @@
-<aside class="col-md-3 col-lg-2 mb-4">
+<aside id="staffSidebar" class="col-md-2 sidebar staff-sidebar-custom" style="background-color:midnightblue; color:#fff; min-height: 100vh; padding-top:0;">
+    <style>
+        .staff-sidebar-custom { background-color: midnightblue; color: #fff; }
+        .staff-sidebar-custom h4 { color: #fff; text-align: left; margin-top: .75rem; }
+        .staff-sidebar-custom .nav { margin: 0; padding: 0; }
+        .staff-sidebar-custom .nav-item { list-style: none; border-bottom: 1px solid rgba(255,255,255,0.25); }
+        .staff-sidebar-custom .nav-item:last-child { border-bottom: none; }
+        .staff-sidebar-custom .sidebar-link {
+            display: flex;
+            align-items: center;
+            gap: .5rem;
+            width: 100%;
+            color: #fff; /* ensure white text */
+            text-decoration: none;
+            padding: .6rem .75rem;
+            background: transparent;
+            border: 0;
+            text-align: left;
+        }
+        .staff-sidebar-custom .sidebar-link:hover,
+        .staff-sidebar-custom .sidebar-link:focus {
+            background-color: rgba(255,255,255,0.12);
+            color: #fff;
+        }
+        .staff-sidebar-custom .sidebar-link .icon { color: #FFD700; } /* yellow icons */
+
+        /* Sidebar toggle placement and collapsed styling */
+        .staff-sidebar-custom .sidebar-header { padding: .25rem .5rem; }
+        /* Compact, borderless hamburger button */
+        .staff-sidebar-custom .sidebar-toggle-btn {
+            background: transparent;
+            border: 0;
+            padding: .25rem;
+            width: 28px;
+            height: 28px;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        .staff-sidebar-custom .sidebar-toggle-btn i { color: #fff; font-size: 1.1rem; line-height: 1; }
+        .staff-sidebar-custom .sidebar-toggle-btn:focus { outline: 2px solid rgba(255,255,255,0.35); outline-offset: 2px; }
+        .staff-sidebar-custom.collapsed {
+            width: 2.5rem !important;
+            max-width: 2.5rem !important;
+            flex: 0 0 2.5rem !important;
+            padding-left: 0;
+            padding-right: 0;
+        }
+        .staff-sidebar-custom.collapsed .sidebar-body { display: none; }
+        .staff-sidebar-custom.collapsed .sidebar-header h4 { display: none; }
+
+        /* Smoothen layout adjustments */
+        #staffSidebar { transition: max-width .2s ease, flex-basis .2s ease; }
+        #staffMain { transition: max-width .2s ease, flex-basis .2s ease; }
+
+        /* Center content background (staff pages only) */
+        .staff-sidebar-custom ~ main,
+        .staff-sidebar-custom ~ #staffMain {
+            background-color: #eceff4; /* light blue */
+        }
+        /* Remove top padding gap only on staff pages with sidebar */
+        .staff-with-sidebar #main-content { padding-top: 0 !important; }
+
+        /* Slight upward nudge for header and staff content to tighten spacing
+           Only applied on staff pages (scoped by body.staff-with-sidebar) */
+        .staff-with-sidebar header,
+        .staff-with-sidebar #staffSidebar,
+        .staff-with-sidebar #staffMain,
+        .staff-with-sidebar .container-fluid > .row {
+            transform: translateY(-6px);
+            transition: transform .22s ease;
+        }
+
+        /* Ensure we don't accidentally overlap content: keep a small min-top offset */
+        @media (min-width: 768px) {
+            .staff-with-sidebar header { z-index: 1020; }
+        }
+
+        /* Consistent spacing: back buttons + dashboard header */
+        .staff-back-btn-wrap { 
+            margin: .5rem 0 1rem; 
+            display: flex;
+            justify-content: flex-end;
+        }
+        /* Align standalone Back buttons to the right */
+        .mb-3 > .btn-secondary:first-child,
+        .container-fluid > .mb-3:first-child > .btn-secondary,
+        main > .mb-3:first-child > .btn-secondary {
+            margin-left: auto;
+            display: block;
+            width: fit-content;
+        }
+        .staff-with-sidebar .dashboard-header { margin-top: .5rem; margin-bottom: 1.25rem; }
+        /* Ensure tables appear white inside center content */
+        .staff-sidebar-custom ~ main .table,
+        .staff-sidebar-custom ~ #staffMain .table,
+        .staff-sidebar-custom ~ main table,
+        .staff-sidebar-custom ~ #staffMain table {
+            background-color: #ffffff;
+        }
+        /* Profile section styling */
+        .staff-sidebar-custom .profile-section {
+            padding: 1.5rem 0.75rem 1rem;
+            margin-top: 1rem;
+            border-bottom: 1px solid rgba(255,255,255,0.25);
+            text-align: center;
+        }
+        .staff-sidebar-custom .profile-avatar {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid rgba(255,255,255,0.3);
+            margin-bottom: 0.75rem;
+        }
+        .staff-sidebar-custom .profile-initials {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background-color: rgba(255,255,255,0.2);
+            border: 3px solid rgba(255,255,255,0.3);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 0.75rem;
+            color: #fff;
+            font-size: 2rem;
+            font-weight: bold;
+        }
+        .staff-sidebar-custom .profile-name {
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.9rem;
+            line-height: 1.3;
+            margin-bottom: 0.25rem;
+        }
+        .staff-sidebar-custom .profile-designation {
+            color: rgba(255,255,255,0.85);
+            font-size: 0.75rem;
+            line-height: 1.2;
+        }
+        .staff-sidebar-custom.collapsed .profile-section {
+            display: none;
+        }
+    </style>
     @php
         $user = \Illuminate\Support\Facades\Auth::user();
         $role = $user->role ?? null;
+        
+        // Get staff record for profile image
+        $staffRecord = null;
+        $currentUserImage = null;
+        if ($user && $role === 2) {
+            $staffRecord = \App\Models\Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($user->email))])->first();
+            $currentUserImage = $staffRecord->image ?? $user->image ?? null;
+        } else {
+            $currentUserImage = $user->image ?? null;
+        }
+        
+        $currentUserName = trim(($user->first_name ?? '') . ' ' . ($user->middle_name ?? '') . ' ' . ($user->last_name ?? ''));
+        $currentUserDesignation = $user->designation 
+            ?? optional($user->staffProfile)->designation 
+            ?? ($staffRecord ? $staffRecord->designation : null)
+            ?? 'STAFF';
+        
+        // Check if staff has a designated dashboard
+        $hasDesignatedDashboard = false;
+        $designatedDashboardUrl = null;
+        $normalizedDesignationForRoute = null;
+        if ($role === 2 && $currentUserDesignation && $currentUserDesignation !== 'STAFF') {
+            // Normalize designation name (handle Guidance Counsellor -> Guidance Counselor)
+            $normalizedDesignationForRoute = trim($currentUserDesignation);
+            if (strcasecmp($normalizedDesignationForRoute, 'Guidance Counsellor') === 0) {
+                $normalizedDesignationForRoute = 'Guidance Counselor';
+            }
+            
+            // Check if designation exists in Designation model (check both original and normalized)
+            $designationExists = \App\Models\Designation::where('name', $currentUserDesignation)->exists() 
+                || \App\Models\Designation::where('name', $normalizedDesignationForRoute)->exists();
+            
+            if ($designationExists) {
+                $hasDesignatedDashboard = true;
+                $designatedDashboardUrl = route('admin.staff.dashboard.designation', ['designation' => $normalizedDesignationForRoute]);
+            }
+        }
+        
+        // Get initials for avatar
+        $initials = '';
+        if ($user) {
+            $firstInitial = strtoupper(substr($user->first_name ?? '', 0, 1));
+            $lastInitial = strtoupper(substr($user->last_name ?? '', 0, 1));
+            $initials = $firstInitial . $lastInitial;
+        }
+        
         $dashboardLabel = 'Dashboard';
         switch ($role) {
             case 4:
@@ -12,12 +203,11 @@
             case 2:
                 $dashboardUrl = route('staff.dashboard');
                 $dashboardActive = request()->routeIs('staff.dashboard');
-                $designation = $user->designation ?? optional($user->staffProfile)->designation;
-                $dashboardLabel = $designation ? ($designation.' Dashboard') : 'Staff Dashboard';
+                $dashboardLabel = $currentUserDesignation ? ($currentUserDesignation.' Dashboard') : 'Staff Dashboard';
                 break;
             case 3:
-                $dashboardUrl = route('assistant.dashboard');
-                $dashboardActive = request()->routeIs('assistant.dashboard');
+                $dashboardUrl = route('student-leader.dashboard');
+                $dashboardActive = request()->routeIs('student-leader.dashboard');
                 $dashboardLabel = 'Assistant Dashboard';
                 break;
             default:
@@ -40,31 +230,159 @@
             $eventsActive = request()->routeIs('staff.events.*');
         }
     @endphp
-    <div class="list-group">
-        <a href="{{ $dashboardUrl }}" class="list-group-item list-group-item-action {{ $dashboardActive ? 'active' : '' }}">
-            {{ $dashboardLabel }}
-        </a>
-        <a href="{{ $appointmentsUrl }}" class="list-group-item list-group-item-action {{ $appointmentsActive ? 'active' : '' }}">
-            My Appointments
-        </a>
-        <a href="{{ $eventsUrl }}" class="list-group-item list-group-item-action {{ $eventsActive ? 'active' : '' }}">
-            My Events
-        </a>
+    
+    <!-- Profile Section -->
+    <div class="profile-section">
+        <div class="mb-2">
+            @if($currentUserImage)
+                @php
+                    // Normalize image path to ensure it's in staff-image directory
+                    $imagePath = $currentUserImage;
+                    $imagePath = ltrim($imagePath, '/');
+                    if (strpos($imagePath, 'staff-image/') === false) {
+                        $imagePath = 'staff-image/' . basename($imagePath);
+                    }
+                    $profileImageUrl = \Illuminate\Support\Facades\Storage::disk('public')->url($imagePath);
+                @endphp
+                <img src="{{ $profileImageUrl }}" 
+                     alt="{{ $currentUserName }}" 
+                     class="profile-avatar">
+            @else
+                <div class="profile-initials">
+                    {{ $initials ?: 'S' }}
+                </div>
+            @endif
+        </div>
+        <div class="profile-name">
+            {{ $currentUserName ?: 'Staff' }}
+        </div>
+        <div class="profile-designation">
+            {{ strtoupper($currentUserDesignation) }}
+        </div>
+    </div>
+    
+    <div class="sidebar-header d-flex align-items-center justify-content-between mb-2">
+        <h4 class="mb-0">Quick Actions</h4>
+        <button id="toggleStaffSidebarBtn" class="sidebar-toggle-btn" type="button" aria-expanded="true" aria-controls="staffSidebar" aria-label="Hide sidebar" title="Hide sidebar">
+            <i class="mai-menu" aria-hidden="true"></i>
+        </button>
+    </div>
+    <div class="sidebar-body">
+    <ul class="nav flex-column">
+        <li class="nav-item">
+            <a class="sidebar-link {{ $dashboardActive ? 'active' : '' }}" href="{{ $dashboardUrl }}">
+                <i class="mai-speedometer icon"></i>
+                <span>{{ $dashboardLabel }}</span>
+            </a>
+        </li>
+        @if($hasDesignatedDashboard && $designatedDashboardUrl)
+            <li class="nav-item">
+                @php
+                    $isDesignatedDashboardActive = request()->routeIs('admin.staff.dashboard.designation') && 
+                        (request()->route('designation') === $currentUserDesignation || 
+                         request()->route('designation') === $normalizedDesignationForRoute);
+                @endphp
+                <a class="sidebar-link {{ $isDesignatedDashboardActive ? 'active' : '' }}" href="{{ $designatedDashboardUrl }}">
+                    <i class="mai-home icon"></i>
+                    <span>Main Dashboard</span>
+                </a>
+            </li>
+        @endif
+        <li class="nav-item">
+            <a class="sidebar-link {{ $appointmentsActive ? 'active' : '' }}" href="{{ $appointmentsUrl }}">
+                <i class="mai-calendar icon"></i>
+                <span>My Appointments</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="sidebar-link {{ $eventsActive ? 'active' : '' }}" href="{{ $eventsUrl }}">
+                <i class="mai-calendar icon"></i>
+                <span>My Events</span>
+            </a>
+        </li>
         @if($role === 2)
-            <a href="{{ route('staff.files.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('staff.files.*') ? 'active' : '' }}">
-                My Files
-            </a>
-            <a href="{{ route('staff.assistants.index') }}" class="list-group-item list-group-item-action {{ request()->routeIs('staff.assistants.*') ? 'active' : '' }}">
-                My Assistant Staff
-            </a>
-            <a href="{{ route('staff.assistants.create') }}" class="list-group-item list-group-item-action {{ request()->routeIs('staff.assistants.create') ? 'active' : '' }}">
-                Add Assistant
-            </a>
+            <li class="nav-item">
+                <a class="sidebar-link {{ request()->routeIs('staff.organizations.*') ? 'active' : '' }}" href="{{ route('staff.organizations.index') }}">
+                    <i class="mai-building icon"></i>
+                    <span>My Organizations</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="sidebar-link {{ request()->routeIs('staff.files.*') ? 'active' : '' }}" href="{{ route('staff.files.index') }}">
+                    <i class="mai-folder icon"></i>
+                    <span>My Files</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="sidebar-link {{ request()->routeIs('staff.student-leaders.*') && !request()->routeIs('staff.student-leaders.create') ? 'active' : '' }}" href="{{ route('staff.student-leaders.index') }}">
+                    <i class="mai-people icon"></i>
+                    <span>My Student Leaders</span>
+                </a>
+            </li>
+            <li class="nav-item">
+                <a class="sidebar-link {{ request()->routeIs('staff.student-leaders.create') ? 'active' : '' }}" href="{{ route('staff.student-leaders.create') }}">
+                    <i class="mai-add icon"></i>
+                    <span>Add Student Leader</span>
+                </a>
+            </li>
         @endif
+        <li class="nav-item">
+            <a class="sidebar-link {{ request()->routeIs('staff.qrscan') ? 'active' : '' }}" href="{{ route('staff.qrscan') }}">
+                <i class="mai-camera icon"></i>
+                <span>Scan QR Code</span>
+            </a>
+        </li>
+        <li class="nav-item">
+            <a class="sidebar-link {{ request()->routeIs('reports.*') ? 'active' : '' }}" href="{{ route('reports.index') }}">
+                <i class="mai-analytics icon"></i>
+                <span>My Reports</span>
+            </a>
+        </li>
         @if($role === 4)
-            <a href="{{ route('admin.participants.export') }}" class="list-group-item list-group-item-action">
-                Export Participants
-            </a>
+            <li class="nav-item">
+                <a class="sidebar-link {{ request()->routeIs('admin.participants.export') ? 'active' : '' }}" href="{{ route('admin.participants.export') }}">
+                    <i class="mai-download icon"></i>
+                    <span>Export Participants</span>
+                </a>
+            </li>
         @endif
+    </ul>
     </div>
 </aside>
+@push('scripts')
+<script>
+    (function(){
+        // Mark body to allow staff-specific layout tweaks (e.g., remove main top padding)
+        document.body.classList.add('staff-with-sidebar');
+        const sidebar = document.getElementById('staffSidebar');
+        const main = document.getElementById('staffMain');
+        const btn = document.getElementById('toggleStaffSidebarBtn');
+        if (!sidebar || !btn) return;
+
+        function applyCollapsedUI(collapsed){
+            if (collapsed) {
+                sidebar.classList.add('collapsed');
+                if (main) { main.classList.remove('col-md-10'); main.classList.add('flex-grow-1'); }
+                btn.setAttribute('aria-expanded','false');
+                btn.setAttribute('aria-label','Show sidebar');
+                btn.title = 'Show sidebar';
+            } else {
+                sidebar.classList.remove('collapsed');
+                if (main) { main.classList.remove('flex-grow-1'); main.classList.add('col-md-10'); }
+                btn.setAttribute('aria-expanded','true');
+                btn.setAttribute('aria-label','Hide sidebar');
+                btn.title = 'Hide sidebar';
+            }
+        }
+
+        const saved = localStorage.getItem('staffSidebarCollapsed') === '1';
+        applyCollapsedUI(saved);
+
+        btn.addEventListener('click', function(){
+            const collapsed = btn.getAttribute('aria-expanded') === 'true';
+            applyCollapsedUI(collapsed);
+            localStorage.setItem('staffSidebarCollapsed', collapsed ? '1' : '0');
+        });
+    })();
+</script>
+@endpush

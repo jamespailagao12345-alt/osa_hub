@@ -5,6 +5,7 @@ namespace App\Observers;
 use App\Models\User;
 use App\Models\Staff;
 use App\Models\Student;
+use App\Models\AssistantAssignment;
 
 class UserObserver
 {
@@ -12,7 +13,10 @@ class UserObserver
 
     /**
      * Handle the User "created" event.
-     * Sync role 1 users (students) to Student table.
+     * Sync users to appropriate tables based on role:
+     * - Role 4 (admin) and Role 2 (staff) → staff_information
+     * - Role 1 (student) → student_information
+     * - Role 3 (assistant) → student_information AND student_leaders_information
      */
     public function created(User $user)
     {
@@ -21,16 +25,12 @@ class UserObserver
             return;
         }
         
-        // Sync role 1 users (students) to Student table
-        if ($user->role === 1) {
-            $this->syncUserToStudent($user);
-        }
+        $this->syncUserToAppropriateTables($user);
     }
 
     /**
      * Handle the User "updated" event.
-     * Sync email changes to Staff table when user email is updated (for staff users only).
-     * Sync role 1 users (students) to Student table.
+     * Sync users to appropriate tables and handle email changes.
      */
     public function updated(User $user)
     {
@@ -39,72 +39,193 @@ class UserObserver
             return;
         }
         
-        // Sync role 1 users (students) to Student table
-        if ($user->role === 1) {
-            $this->syncUserToStudent($user);
-        }
+        // Sync user to appropriate tables
+        $this->syncUserToAppropriateTables($user);
         
-        // Sync role 2 users (staff) to Staff table
-        if ($user->role === 2) {
-            // Check if email was changed
-            if ($user->wasChanged('email')) {
-                self::$syncing = true;
-                
-                try {
-                    $oldEmail = $user->getOriginal('email');
-                    $newEmail = $user->email;
-                    
-                    // Find staff by old email (case-insensitive)
-                    $staff = Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($oldEmail))])->first();
-                    
-                    // If not found by old email, try new email (case-insensitive)
-                    if (!$staff) {
-                        $staff = Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($newEmail))])->first();
-                    }
-                    
-                    // If still not found, try by user_id
-                    if (!$staff && $user->user_id) {
-                        $staff = Staff::where('user_id', $user->user_id)->first();
-                    }
-                    
-                    // Update staff email if found and different
-                    if ($staff && strtolower(trim($staff->email)) !== strtolower(trim($newEmail))) {
-                        $staff->email = $newEmail;
-                        $staff->saveQuietly(); // Use saveQuietly to prevent observer recursion
-                    }
-                    
-                    // Update ALL other user records with the old email to the new email
-                    if ($oldEmail && strtolower(trim($newEmail)) !== strtolower(trim($oldEmail))) {
-                        User::withoutEvents(function() use ($oldEmail, $newEmail, $user) {
-                            User::whereRaw('LOWER(email) = ?', [strtolower(trim($oldEmail))])
-                                ->where('id', '!=', $user->id)
-                                ->update(['email' => $newEmail]);
-                        });
-                    }
-                    
-                    // Update ALL staff records with the old email to the new email
-                    if ($oldEmail && strtolower(trim($newEmail)) !== strtolower(trim($oldEmail))) {
-                        Staff::withoutEvents(function() use ($oldEmail, $newEmail, $staff) {
-                            Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($oldEmail))])
-                                ->where('id', '!=', $staff->id ?? 0)
-                                ->update(['email' => $newEmail]);
-                        });
-                    }
-                } finally {
-                    self::$syncing = false;
-                }
-            }
+        // Handle email changes for staff (role 2 and 4)
+        if (in_array($user->role, [2, 4]) && $user->wasChanged('email')) {
+            $this->handleStaffEmailChange($user);
         }
     }
 
     /**
-     * Sync a User record (role = 1) to Student table
-     * This ensures all students exist in both tables
+     * Sync user to appropriate tables based on role
+     */
+    private function syncUserToAppropriateTables(User $user)
+    {
+        if (self::$syncing) {
+            return;
+        }
+        
+        self::$syncing = true;
+        
+        try {
+            $role = (int) $user->role;
+            
+            // Role 4 (admin) and Role 2 (staff) → staff_information
+            if ($role === 4 || $role === 2) {
+                $this->syncUserToStaff($user);
+            }
+            
+            // Role 1 (student) → student_information
+            if ($role === 1) {
+                $this->syncUserToStudent($user);
+            }
+            
+            // Role 3 (assistant) → student_information AND student_leaders_information
+            if ($role === 3) {
+                // Sync to student_information (assistants are also students)
+                $this->syncUserToStudent($user);
+                
+                // Sync to student_leaders_information
+                $this->syncUserToStudentLeaders($user);
+            }
+        } finally {
+            self::$syncing = false;
+        }
+    }
+
+    /**
+     * Handle email changes for staff (role 2 and 4)
+     */
+    private function handleStaffEmailChange(User $user)
+    {
+        self::$syncing = true;
+        
+        try {
+            $oldEmail = $user->getOriginal('email');
+            $newEmail = $user->email;
+            
+            // Find staff by old email (case-insensitive)
+            $staff = Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($oldEmail))])->first();
+            
+            // If not found by old email, try new email (case-insensitive)
+            if (!$staff) {
+                $staff = Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($newEmail))])->first();
+            }
+            
+            // If still not found, try by user_id
+            if (!$staff && $user->user_id) {
+                $staff = Staff::where('user_id', $user->user_id)->first();
+            }
+            
+            // Update staff email if found and different
+            if ($staff && strtolower(trim($staff->email)) !== strtolower(trim($newEmail))) {
+                $staff->email = $newEmail;
+                $staff->saveQuietly(); // Use saveQuietly to prevent observer recursion
+            }
+            
+            // Update ALL other user records with the old email to the new email
+            if ($oldEmail && strtolower(trim($newEmail)) !== strtolower(trim($oldEmail))) {
+                User::withoutEvents(function() use ($oldEmail, $newEmail, $user) {
+                    User::whereRaw('LOWER(email) = ?', [strtolower(trim($oldEmail))])
+                        ->where('id', '!=', $user->id)
+                        ->update(['email' => $newEmail]);
+                });
+            }
+            
+            // Update ALL staff records with the old email to the new email
+            if ($oldEmail && strtolower(trim($newEmail)) !== strtolower(trim($oldEmail))) {
+                Staff::withoutEvents(function() use ($oldEmail, $newEmail, $staff) {
+                    Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($oldEmail))])
+                        ->where('id', '!=', $staff->id ?? 0)
+                        ->update(['email' => $newEmail]);
+                });
+            }
+        } finally {
+            self::$syncing = false;
+        }
+    }
+
+    /**
+     * Sync a User record (role = 2 or 4) to Staff table (staff_information)
+     */
+    private function syncUserToStaff(User $user)
+    {
+        $role = (int) $user->role;
+        if ($role !== 2 && $role !== 4) {
+            return; // Only sync staff and admin
+        }
+        
+        // Prevent infinite recursion
+        if (self::$syncing) {
+            return;
+        }
+        
+        self::$syncing = true;
+        
+        try {
+            // Check if Staff record already exists
+            $existingStaff = Staff::where('user_id', $user->id)
+                ->orWhereRaw('LOWER(email) = ?', [strtolower(trim($user->email))])
+                ->first();
+            
+            $staffData = [
+                'first_name' => $user->first_name ?? '',
+                'last_name' => $user->last_name ?? '',
+                'middle_name' => $user->middle_name ?? '',
+                'user_id' => $user->user_id,
+                'employee_id' => $user->user_id, // Copy 7-digit user_id as employee_id
+                'email' => $user->email,
+                'designation' => $user->designation ?? null,
+                'department_id' => $user->department_id ?? null,
+                'organization_id' => $user->organization_id ?? null,
+                'contact_number' => $user->contact_number ?? null,
+                'birth_date' => $user->birth_date ?? null,
+                'gender' => $user->gender ?? null,
+                'age' => $user->age ?? null,
+            ];
+            
+            // Add optional fields if they exist in the user model
+            if (isset($user->image)) {
+                $staffData['image'] = $user->image;
+            }
+            if (isset($user->service_order)) {
+                $staffData['service_order'] = $user->service_order;
+            }
+            if (isset($user->length_of_service)) {
+                $staffData['length_of_service'] = $user->length_of_service;
+            }
+            if (isset($user->contract_end_at)) {
+                $staffData['contract_end_at'] = $user->contract_end_at;
+            }
+            if (isset($user->employment_status)) {
+                $staffData['employment_status'] = $user->employment_status;
+            }
+            if (isset($user->about_me)) {
+                $staffData['about_me'] = $user->about_me;
+            }
+            
+            if ($existingStaff) {
+                // Update existing Staff record
+                $existingStaff->update($staffData);
+            } else {
+                // Create new Staff record
+                // For admin_id, use the user's id if role is 4, otherwise find admin
+                if ($role === 4) {
+                    $staffData['admin_id'] = $user->id; // Admin is their own admin
+                } else {
+                    // Try to find an admin user
+                    $admin = User::where('role', 4)->first();
+                    $staffData['admin_id'] = $admin ? $admin->id : $user->id;
+                }
+                
+                Staff::create($staffData);
+            }
+        } finally {
+            self::$syncing = false;
+        }
+    }
+
+    /**
+     * Sync a User record (role = 1 or 3) to Student table (student_information)
+     * Role 3 users are also students, so they need to be in student_information
      */
     private function syncUserToStudent(User $user)
     {
-        if ($user->role !== 1) {
-            return; // Only sync students
+        $role = (int) $user->role;
+        if ($role !== 1 && $role !== 3) {
+            return; // Only sync students and assistants
         }
         
         // Prevent infinite recursion
@@ -121,101 +242,146 @@ class UserObserver
             // Use the email from the user record
             $email = $user->email ?? null;
             
+            // Get student information from normalized table if available
+            $studentInfo = $user->studentInformation;
+            
+            $studentData = [
+                'user_id' => $user->id,
+                'student_id' => $user->user_id, // Copy 10-digit user_id as student_id
+                'first_name' => $user->first_name ?? '',
+                'middle_name' => $user->middle_name ?? '',
+                'last_name' => $user->last_name ?? '',
+                'email' => $email,
+                'contact_number' => $user->contact_number ?? '',
+                'gender' => $user->gender ?? 'other',
+                'birth_date' => $user->birth_date ?? null,
+                'department_id' => $user->department_id ?? null,
+                'course_id' => $user->course_id ?? null,
+                'organization_id' => $user->organization_id ?? null,
+                'scholarship_id' => optional($studentInfo)->scholarship_id ?? $user->scholarship_id ?? null,
+                'year_level' => optional($studentInfo)->year_level ?? null,
+                'student_type1' => optional($studentInfo)->student_type1 ?? null,
+                'student_type2' => optional($studentInfo)->student_type2 ?? null,
+            ];
+            
+            // Add optional fields if they exist in the user model
+            if (isset($user->ext_name)) {
+                $studentData['ext_name'] = $user->ext_name;
+            }
+            if (isset($user->tel_no)) {
+                $studentData['tel_no'] = $user->tel_no;
+            }
+            if (isset($user->age)) {
+                $studentData['age'] = $user->age;
+            }
+            if (isset($user->civil_status)) {
+                $studentData['civil_status'] = $user->civil_status;
+            }
+            if (isset($user->maiden_name)) {
+                $studentData['maiden_name'] = $user->maiden_name;
+            }
+            if (isset($user->place_of_birth)) {
+                $studentData['place_of_birth'] = $user->place_of_birth;
+            }
+            if (isset($user->nationality)) {
+                $studentData['nationality'] = $user->nationality;
+            }
+            if (isset($user->religion)) {
+                $studentData['religion'] = $user->religion;
+            }
+            if (isset($user->complete_home_address)) {
+                $studentData['complete_home_address'] = $user->complete_home_address;
+            }
+            if (isset($user->street)) {
+                $studentData['street'] = $user->street;
+            }
+            if (isset($user->barangay)) {
+                $studentData['barangay'] = $user->barangay;
+            }
+            if (isset($user->city_municipality)) {
+                $studentData['city_municipality'] = $user->city_municipality;
+            }
+            if (isset($user->province)) {
+                $studentData['province'] = $user->province;
+            }
+            if (isset($user->zip_code)) {
+                $studentData['zip_code'] = $user->zip_code;
+            }
+            if (isset($user->student_type)) {
+                $studentData['student_type'] = $user->student_type;
+            }
+            if (isset($user->school_year)) {
+                $studentData['school_year'] = $user->school_year;
+            }
+            if (isset($user->semester)) {
+                $studentData['semester'] = $user->semester;
+            }
+            if (isset($user->emergency_contact_name)) {
+                $studentData['emergency_contact_name'] = $user->emergency_contact_name;
+            }
+            if (isset($user->emergency_contact_number)) {
+                $studentData['emergency_contact_number'] = $user->emergency_contact_number;
+            }
+            if (isset($user->emergency_relation)) {
+                $studentData['emergency_relation'] = $user->emergency_relation;
+            }
+            if (isset($user->image)) {
+                $studentData['personal_data_sheet_image'] = $user->image;
+            }
+            
             if ($existingStudent) {
-                // Update existing Student record with User data
-                $existingStudent->update([
-                    'first_name' => $user->first_name ?? $existingStudent->first_name,
-                    'middle_name' => $user->middle_name ?? $existingStudent->middle_name,
-                    'last_name' => $user->last_name ?? $existingStudent->last_name,
-                    'email' => $email,
-                    'contact_number' => $user->contact_number ?? $existingStudent->contact_number,
-                    'gender' => $user->gender ?? $existingStudent->gender,
-                    'birth_date' => $user->birth_date ?? $existingStudent->birth_date,
-                    'age' => $user->age ?? $existingStudent->age,
-                    'civil_status' => $user->civil_status ?? $existingStudent->civil_status,
-                    'maiden_name' => $user->maiden_name ?? $existingStudent->maiden_name,
-                    'place_of_birth' => $user->place_of_birth ?? $existingStudent->place_of_birth,
-                    'complete_home_address' => $user->complete_home_address ?? $existingStudent->complete_home_address,
-                    'department_id' => $user->department_id ?? $existingStudent->department_id,
-                    'course_id' => $user->course_id ?? $existingStudent->course_id,
-                    'organization_id' => $user->organization_id ?? $existingStudent->organization_id,
-                    'scholarship_id' => $user->scholarship_id ?? $existingStudent->scholarship_id,
-                    'year_level' => $user->year_level ?? $existingStudent->year_level,
-                    'student_type1' => $user->student_type1 ?? $existingStudent->student_type1,
-                    'student_type2' => $user->student_type2 ?? $existingStudent->student_type2,
-                    'student_type' => $user->student_type ?? $existingStudent->student_type,
-                    'school_year' => $user->school_year ?? $existingStudent->school_year,
-                    'semester' => $user->semester ?? $existingStudent->semester,
-                    'emergency_contact_name' => $user->emergency_contact_name ?? $existingStudent->emergency_contact_name,
-                    'emergency_contact_number' => $user->emergency_contact_number ?? $existingStudent->emergency_contact_number,
-                    'emergency_relation' => $user->emergency_relation ?? $existingStudent->emergency_relation,
-                    'parent_spouse_guardian' => $user->parent_spouse_guardian ?? $existingStudent->parent_spouse_guardian,
-                    'parent_spouse_guardian_address' => $user->parent_spouse_guardian_address ?? $existingStudent->parent_spouse_guardian_address,
-                    'elementary_school' => $user->elementary_school ?? $existingStudent->elementary_school,
-                    'elementary_address' => $user->elementary_address ?? $existingStudent->elementary_address,
-                    'elementary_year_graduated' => $user->elementary_year_graduated ?? $existingStudent->elementary_year_graduated,
-                    'high_school' => $user->high_school ?? $existingStudent->high_school,
-                    'high_school_address' => $user->high_school_address ?? $existingStudent->high_school_address,
-                    'high_school_year_graduated' => $user->high_school_year_graduated ?? $existingStudent->high_school_year_graduated,
-                    'college_name' => $user->college_name ?? $existingStudent->college_name,
-                    'college_address' => $user->college_address ?? $existingStudent->college_address,
-                    'college_course' => $user->college_course ?? $existingStudent->college_course,
-                    'college_year' => $user->college_year ?? $existingStudent->college_year,
-                    'form_137_presented' => $user->form_137_presented ?? $existingStudent->form_137_presented,
-                    'tor_presented' => $user->tor_presented ?? $existingStudent->tor_presented,
-                    'good_moral_cert_presented' => $user->good_moral_cert_presented ?? $existingStudent->good_moral_cert_presented,
-                    'birth_cert_presented' => $user->birth_cert_presented ?? $existingStudent->birth_cert_presented,
-                    'marriage_cert_presented' => $user->marriage_cert_presented ?? $existingStudent->marriage_cert_presented,
-                    'personal_data_sheet_image' => $user->image ?? $existingStudent->personal_data_sheet_image,
-                ]);
+                // Update existing Student record
+                $existingStudent->update($studentData);
             } else {
-                // Create new Student record from User data
-                Student::create([
-                    'user_id' => $user->id,
-                    'first_name' => $user->first_name ?? '',
-                    'middle_name' => $user->middle_name ?? '',
-                    'last_name' => $user->last_name ?? '',
-                    'email' => $email,
-                    'contact_number' => $user->contact_number ?? '',
-                    'gender' => $user->gender ?? 'other',
-                    'birth_date' => $user->birth_date ?? null,
-                    'age' => $user->age ?? null,
-                    'civil_status' => $user->civil_status ?? null,
-                    'maiden_name' => $user->maiden_name ?? null,
-                    'place_of_birth' => $user->place_of_birth ?? null,
-                    'complete_home_address' => $user->complete_home_address ?? null,
-                    'department_id' => $user->department_id ?? null,
-                    'course_id' => $user->course_id ?? null,
-                    'organization_id' => $user->organization_id ?? null,
-                    'scholarship_id' => $user->scholarship_id ?? null,
-                    'year_level' => $user->year_level ?? null,
-                    'student_type1' => $user->student_type1 ?? null,
-                    'student_type2' => $user->student_type2 ?? null,
-                    'student_type' => $user->student_type ?? null,
-                    'school_year' => $user->school_year ?? null,
-                    'semester' => $user->semester ?? null,
-                    'emergency_contact_name' => $user->emergency_contact_name ?? null,
-                    'emergency_contact_number' => $user->emergency_contact_number ?? null,
-                    'emergency_relation' => $user->emergency_relation ?? null,
-                    'parent_spouse_guardian' => $user->parent_spouse_guardian ?? null,
-                    'parent_spouse_guardian_address' => $user->parent_spouse_guardian_address ?? null,
-                    'elementary_school' => $user->elementary_school ?? null,
-                    'elementary_address' => $user->elementary_address ?? null,
-                    'elementary_year_graduated' => $user->elementary_year_graduated ?? null,
-                    'high_school' => $user->high_school ?? null,
-                    'high_school_address' => $user->high_school_address ?? null,
-                    'high_school_year_graduated' => $user->high_school_year_graduated ?? null,
-                    'college_name' => $user->college_name ?? null,
-                    'college_address' => $user->college_address ?? null,
-                    'college_course' => $user->college_course ?? null,
-                    'college_year' => $user->college_year ?? null,
-                    'form_137_presented' => $user->form_137_presented ?? false,
-                    'tor_presented' => $user->tor_presented ?? false,
-                    'good_moral_cert_presented' => $user->good_moral_cert_presented ?? false,
-                    'birth_cert_presented' => $user->birth_cert_presented ?? false,
-                    'marriage_cert_presented' => $user->marriage_cert_presented ?? false,
-                    'personal_data_sheet_image' => $user->image ?? null,
-                ]);
+                // Create new Student record
+                Student::create($studentData);
+            }
+        } finally {
+            self::$syncing = false;
+        }
+    }
+
+    /**
+     * Sync a User record (role = 3) to Student Leaders table (student_leaders_information)
+     * All role 3 users must be in student_leaders_information
+     */
+    private function syncUserToStudentLeaders(User $user)
+    {
+        $role = (int) $user->role;
+        if ($role !== 3) {
+            return; // Only sync assistants
+        }
+        
+        // Prevent infinite recursion
+        if (self::$syncing) {
+            return;
+        }
+        
+        self::$syncing = true;
+        
+        try {
+            // Check if AssistantAssignment record already exists
+            $existingAssignment = AssistantAssignment::where('user_id', $user->id)->first();
+            
+            $assignmentData = [
+                'user_id' => $user->id,
+                'organization_id' => $user->organization_id ?? null,
+                'department_id' => $user->department_id ?? null,
+                'supervisor_id' => $user->supervisor_id ?? null,
+                'active' => true, // Default to active
+            ];
+            
+            // Add position if it exists in user model
+            if (isset($user->position)) {
+                $assignmentData['position'] = $user->position;
+            }
+            
+            if ($existingAssignment) {
+                // Update existing assignment
+                $existingAssignment->update($assignmentData);
+            } else {
+                // Create new assignment
+                AssistantAssignment::create($assignmentData);
             }
         } finally {
             self::$syncing = false;

@@ -18,7 +18,7 @@ class AssistantAccess
             return $next($request);
         }
         if (($user->role ?? null) === 1) {
-            $count = $user->assistantAssignments()->where('active', true)->count();
+            $count = $user->assistantAssignments()->where('is_active', true)->count();
             if ($count >= 1 && $count <= 3) {
                 return $next($request);
             }

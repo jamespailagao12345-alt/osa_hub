@@ -9,14 +9,16 @@ class Staff extends Model
 {
     use HasFactory;
 
-    protected $table = 'staff';
+    protected $table = 'staff_information';
 
     protected $fillable = [
         'first_name',
         'last_name',
         'middle_name',
         'user_id',
+        'staff_id',
         'email',
+        'password',
         'designation',
         'department_id',
         'organization_id',
@@ -28,8 +30,10 @@ class Staff extends Model
         'gender',
         'age',
         'length_of_service',
+        'contract_start_at',
         'contract_end_at',
         'employment_status',
+        'about_me',
     ];
 
     public function department()
@@ -50,5 +54,10 @@ class Staff extends Model
     public function admin()
     {
         return $this->belongsTo(User::class, 'admin_id');
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
     }
 }

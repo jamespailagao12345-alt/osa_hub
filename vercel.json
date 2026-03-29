@@ -1,4 +1,8 @@
 {
+  "installCommand": "curl -fsSL https://getcomposer.org/installer -o composer-setup.php && php composer-setup.php && php composer.phar install --no-dev --prefer-dist --optimize-autoloader"
+}
+
+{
   "version": 2,
   "outputDirectory": "dist",
   "installCommand": "composer install --no-dev --prefer-dist --optimize-autoloader",

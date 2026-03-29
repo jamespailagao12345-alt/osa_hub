@@ -1,45 +1,30 @@
 @extends('layouts.app')
 
-@section('title', $organization->name . ' - My Assistant Staff')
+@section('title', $organization->name . ' - My Student Leaders')
 
 @section('content')
 <div class="container-fluid">
-  <div class="row mb-3">
+  <div class="row">
     <div class="col-12">
-      <a href="{{ route('staff.organizations.index') }}" class="btn btn-secondary">&larr; Back to Organizations</a>
+      <div class="admin-back-btn-wrap">
+        <a href="{{ route('staff.organizations.index') }}" class="btn btn-secondary">&larr; Back to Organizations</a>
+      </div>
     </div>
   </div>
   <div class="row">
-    <div class="col-md-3 col-lg-2">
-      <div class="list-group mb-3">
-        <div class="list-group-item active" style="background-color: midnightblue; border-color: midnightblue;">Quick Actions</div>
-        <a href="{{ route('admin.appointments.index') }}" class="list-group-item list-group-item-action">Assigned Appointments</a>
-        @php
-          $isStaff = (auth()->user()->role ?? 0) == 2;
-          $isAdmin = (auth()->user()->role ?? 0) == 4;
-        @endphp
-        @if($isStaff)
-          <a href="{{ route('staff.organizations.index') }}" class="list-group-item list-group-item-action">My Organization</a>
-        @endif
-        <a href="{{ route('admin.events.index') }}" class="list-group-item list-group-item-action">All Events</a>
-        @if($isAdmin)
-          <a href="{{ route('admin.events.index') }}#create" class="list-group-item list-group-item-action">Create Event</a>
-        @endif
-        <a href="{{ route('admin.participants.export') }}" class="list-group-item list-group-item-action">Participants History</a>
-      </div>
-    </div>
-    <main class="col-md-9 col-lg-10">
-      <h2 class="mb-3">{{ $organization->name }} - My Assistant Staff</h2>
+    @include('staff.partials.sidebar')
+    <main id="staffMain" class="col-md-10">
+      <h2 class="mb-3">{{ $organization->name }} - My Student Leaders</h2>
       
       <div class="mb-3">
-        <a href="{{ route('staff.assistants.create', ['organization_id' => $organization->id]) }}" class="btn btn-success">
+        <a href="{{ route('staff.student-leaders.create', ['organization_id' => $organization->id]) }}" class="btn btn-success">
           <i class="bi bi-person-plus"></i> Add Assistant
         </a>
       </div>
       
-      @if($assistants->isEmpty())
+      @if($studentLeaders->isEmpty())
         <div class="alert alert-info">
-          <p>No assistants assigned to this organization yet.</p>
+          <p>No student leaders assigned to this organization yet.</p>
         </div>
       @else
         <div class="table-responsive">
@@ -54,7 +39,7 @@
               </tr>
             </thead>
             <tbody>
-              @foreach($assistants as $assistant)
+              @foreach($studentLeaders as $assistant)
                 <tr>
                   <td>{{ $assistant->user_id }}</td>
                   <td>{{ $assistant->first_name }} {{ $assistant->middle_name ?? '' }} {{ $assistant->last_name }}</td>
@@ -67,21 +52,21 @@
                     @endif
                   </td>
                   <td>
-                    <a href="{{ route('staff.assistants.edit', $assistant->id) }}" class="btn btn-sm btn-primary">Edit</a>
+                    <a href="{{ route('staff.student-leaders.edit', $assistant->id) }}" class="btn btn-sm btn-primary">Edit</a>
                     @if($assistant->suspended)
-                      <form action="{{ route('staff.assistants.resume', $assistant->id) }}" method="POST" class="d-inline">
+                      <form action="{{ route('staff.student-leaders.resume', $assistant->id) }}" method="POST" class="d-inline">
                         @csrf
                         @method('PUT')
                         <button type="submit" class="btn btn-sm btn-success">Resume</button>
                       </form>
                     @else
-                      <form action="{{ route('staff.assistants.suspend', $assistant->id) }}" method="POST" class="d-inline">
+                      <form action="{{ route('staff.student-leaders.suspend', $assistant->id) }}" method="POST" class="d-inline">
                         @csrf
                         @method('PUT')
                         <button type="submit" class="btn btn-sm btn-warning">Suspend</button>
                       </form>
                     @endif
-                    <form action="{{ route('staff.assistants.destroy', $assistant->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this assistant?');">
+                    <form action="{{ route('staff.student-leaders.destroy', $assistant->id) }}" method="POST" class="d-inline" onsubmit="return confirm('Are you sure you want to delete this assistant?');">
                       @csrf
                       @method('DELETE')
                       <button type="submit" class="btn btn-sm btn-danger">Delete</button>

@@ -37,7 +37,6 @@
             <table class="table table-bordered align-middle">
                 <thead>
                     <tr class="text-center" style="background-color:midnightblue; color:white">
-                        <th>ID</th>
                         <th>Name</th>
                         <th>Email</th>
                         <th>Role</th>
@@ -46,8 +45,10 @@
                 </thead>
                 <tbody>
                     @foreach($admins as $admin)
+                        @if(isset($admin->user_id) && $admin->user_id === 'admin001')
+                            @continue
+                        @endif
                     <tr class="text-center">
-                        <td>{{ $admin->id }}</td>
                         <td>{{ $admin->first_name }} {{ $admin->last_name }}</td>
                         <td>{{ $admin->email }}</td>
                         <td>{{ $admin->role }}</td>

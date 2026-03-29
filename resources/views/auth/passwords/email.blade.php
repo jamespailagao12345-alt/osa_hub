@@ -32,10 +32,19 @@
                         </div>
 
                         <div class="row mb-0">
-                            <div class="col-md-6 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Send Password Reset Link') }}
+                            <div class="col-md-6 offset-md-4 d-flex justify-content-center">
+                                <button type="submit" class="btn btn-sm" style="background-color: transparent !important; border-color: midnightblue; color: midnightblue;">
+                                    <i class="bi bi-envelope"></i> {{ __('Send Password Reset Link') }}
                                 </button>
+                            </div>
+                        </div>
+                        <div class="row mb-0">
+                            <div class="col-md-6 offset-md-4">
+                                <div class="mt-2 text-center">
+                                    <a href="{{ route('login') }}" class="text-decoration-none" style="font-size: 0.75rem;">
+                                        {{ __('Back to Login') }}
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </form>

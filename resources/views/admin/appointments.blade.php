@@ -10,13 +10,37 @@
     <main class="col-md-10">
       <div class="admin-back-btn-wrap">
         @if(request()->has('return_to'))
-          <a href="{{ urldecode(request('return_to')) }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Dashboard</a>
+          @php
+            $returnUrl = request('return_to');
+            // Decode multiple times until no more encoding is found
+            $decoded = $returnUrl;
+            $previous = '';
+            while ($decoded !== $previous && strpos($decoded, '%') !== false) {
+              $previous = $decoded;
+              $decoded = urldecode($decoded);
+            }
+            $returnUrl = $decoded;
+            
+            // If it's a full URL (starts with http:// or https://), extract just the path
+            if (preg_match('/^https?:\/\//', $returnUrl)) {
+              $parsed = parse_url($returnUrl);
+              $backUrl = isset($parsed['path']) ? urldecode($parsed['path']) : '/';
+              if (isset($parsed['query'])) {
+                $backUrl .= '?' . $parsed['query'];
+              }
+            } else {
+              // It's a relative path - decode it and ensure it starts with /
+              $decodedPath = urldecode($returnUrl);
+              $backUrl = (strpos($decodedPath, '/') === 0) ? $decodedPath : '/' . ltrim($decodedPath, '/');
+            }
+          @endphp
+          <a href="{{ $backUrl }}" class="btn btn-secondary rounded-pill px-3">&lt; Back</a>
         @else
-          <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Dashboard</a>
+          <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back</a>
         @endif
       </div>
       <style>
-        .section-header { display:block; width:100%; box-sizing:border-box; background:#fff; color: midnightblue; padding:.5rem 1rem; border:none; border-bottom:1px solid midnightblue; border-radius:0; }
+        .section-header { display:block; width:100%; box-sizing:border-box; background-color: midnightblue; color: white; padding:.5rem 1rem; border:none; border-radius:0; }
       </style>
       <h2 class="mb-3"><span class="section-header">Appointments</h2>
       @if(isset($isAdmin) && $isAdmin)
@@ -46,10 +70,39 @@
         </div>
       </form>
       @elseif((isset($isStaff) && $isStaff && !$isAdmin))
+        @php
+          // Normalize designation check - handle both "Guidance Counselor" (American) and "Guidance Counsellor" (British)
+          // Standardize on American spelling for consistency (backward compatibility maintained)
+          $normalizedDesignation = isset($userDesignation) ? trim($userDesignation) : '';
+          if (strcasecmp($normalizedDesignation, 'Guidance Counsellor') === 0) {
+            $normalizedDesignation = 'Guidance Counselor';
+          }
+          $isGuidanceCounselor = strcasecmp($normalizedDesignation, 'Guidance Counselor') === 0;
+        @endphp
+        @if($isGuidanceCounselor)
+          <p class="mb-3">
+            <strong>Legend:</strong> 
+            <span style="background-color: #dc3545; color: white; padding: 2px 8px; border-radius: 3px; font-weight: bold;">Red</span> = Personal/Urgent, 
+            <span style="background-color: #0d6efd; color: white; padding: 2px 8px; border-radius: 3px; font-weight: bold;">Blue</span> = Academic Related, 
+            <span style="background-color: #ffc107; color: black; padding: 2px 8px; border-radius: 3px; font-weight: bold;">Yellow</span> = Family/Peer
+          </p>
+        @else
       <p class="text-muted mb-3">Showing appointments assigned to you ({{ isset($userDesignation) && $userDesignation ? $userDesignation : 'Staff' }}).</p>
+        @endif
       @endif
 
       <div class="table-responsive">
+        @php
+          // Reuse the designation check from above, or calculate if not already set
+          // Standardize on American spelling for consistency (backward compatibility maintained)
+          if (!isset($isGuidanceCounselor)) {
+            $normalizedDesignation = isset($userDesignation) ? trim($userDesignation) : '';
+            if (strcasecmp($normalizedDesignation, 'Guidance Counsellor') === 0) {
+              $normalizedDesignation = 'Guidance Counselor';
+            }
+            $isGuidanceCounselor = strcasecmp($normalizedDesignation, 'Guidance Counselor') === 0;
+          }
+        @endphp
         <table class="table table-bordered align-middle">
           <thead>
             <tr class="text-center" style="background-color:midnightblue; color:white">
@@ -58,9 +111,15 @@
               <th>Appointment Date</th>
               <th>Schedule Time</th>
               <th>Category / Concern</th>
+              @unless($isGuidanceCounselor)
               <th>Assigned Staff</th>
+              @endunless
               <th>Actions Taken</th>
               <th>Status</th>
+              <th>Session</th>
+              @if($isGuidanceCounselor)
+                <th>Reason for Counseling</th>
+              @endif
               <th>Created</th>
             </tr>
           </thead>
@@ -69,16 +128,30 @@
               <tr>
                 <td>{{ $appointment->full_name }}</td>
                 <td>{{ $appointment->email }}</td>
-                <td>{{ optional($appointment->appointment_date)->format('M d, Y') }}</td>
-                <td>{{ $appointment->appointment_time ? date('g:i A', strtotime($appointment->appointment_time)) : '-' }}</td>
+                <td>
+                  @if($appointment->action_taken === 'reschedule' && $appointment->rescheduled_date)
+                    {{ \Carbon\Carbon::parse($appointment->rescheduled_date)->format('M d, Y') }}
+                  @else
+                    {{ optional($appointment->appointment_date)->format('M d, Y') }}
+                  @endif
+                </td>
+                <td>
+                  @if($appointment->action_taken === 'reschedule' && $appointment->rescheduled_time)
+                    {{ date('g:i A', strtotime($appointment->rescheduled_time)) }}
+                  @else
+                    {{ $appointment->appointment_time ? date('g:i A', strtotime($appointment->appointment_time)) : '-' }}
+                  @endif
+                </td>
                 <td>
                   @php
-                    $isGuidanceCounselor = $appointment->concern && (
+                    // Check if this appointment is for Guidance Counselor (based on concern field)
+                    // Handle both American and British spellings for backward compatibility
+                    $isGuidanceCounselorAppointment = $appointment->concern && (
                         stripos($appointment->concern, 'Guidance') !== false && 
-                        stripos($appointment->concern, 'Counsellor') !== false
+                        (stripos($appointment->concern, 'Counselor') !== false || stripos($appointment->concern, 'Counsellor') !== false)
                     );
                   @endphp
-                  @if($isGuidanceCounselor && $appointment->category)
+                  @if($isGuidanceCounselorAppointment && $appointment->category)
                     @php
                       $categoryColors = [
                         'Red' => '#dc3545',
@@ -94,6 +167,7 @@
                     {{ $appointment->concern }}
                   @endif
                 </td>
+                @unless($isGuidanceCounselor)
                 <td>
                   @if(!empty($appointment->concern))
                     {{ $appointment->concern }}
@@ -103,36 +177,38 @@
                     <span class="text-muted">Unassigned</span>
                   @endif
                 </td>
+                @endunless
                 <td class="text-center">
                   @if($appointment->status === 'pending')
                     <div class="btn-group" role="group">
-                      <button type="button" class="btn btn-sm btn-success" data-toggle="modal" data-target="#approveModal{{ $appointment->id }}">
+                      <button type="button" class="btn btn-sm btn-success" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" data-toggle="modal" data-target="#approveModal{{ $appointment->id }}">
                         <i class="bi bi-check-circle"></i> Approve
                       </button>
-                      <button type="button" class="btn btn-sm btn-danger" data-toggle="modal" data-target="#declineModal{{ $appointment->id }}">
+                      <button type="button" class="btn btn-sm btn-danger" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" data-toggle="modal" data-target="#declineModal{{ $appointment->id }}">
                         <i class="bi bi-x-circle"></i> Decline
                       </button>
-                      <button type="button" class="btn btn-sm btn-warning" data-toggle="modal" data-target="#rescheduleModal{{ $appointment->id }}">
+                      <button type="button" class="btn btn-sm btn-warning" style="padding: 0.2rem 0.5rem; font-size: 0.75rem;" data-toggle="modal" data-target="#rescheduleModal{{ $appointment->id }}">
                         <i class="bi bi-calendar-event"></i> Reschedule
                       </button>
                     </div>
-                  @else
-                    @if($appointment->action_taken === 'approve')
-                      <span class="badge bg-success">
-                        <i class="bi bi-check-circle"></i> Approved
-                      </span>
                     @elseif($appointment->action_taken === 'decline')
                       <span class="badge bg-danger">
                         <i class="bi bi-x-circle"></i> Declined
                         @if($appointment->action_reason)
                           <br><small class="d-block mt-1" style="font-size: 0.75em; font-weight: normal;">{{ \Illuminate\Support\Str::limit($appointment->action_reason, 50) }}</small>
                         @endif
+                    </span>
+                  @else
+                    <div class="d-flex flex-column align-items-center" style="gap: 0.25rem;">
+                      @if($appointment->action_taken === 'approve')
+                        <span class="badge bg-success" style="font-size: 0.75rem;">
+                          <i class="bi bi-check-circle"></i> Approved
                       </span>
                     @elseif($appointment->action_taken === 'reschedule')
-                      <span class="badge bg-warning text-dark">
+                        <span class="badge bg-warning text-dark" style="font-size: 0.75rem;">
                         <i class="bi bi-calendar-event"></i> Rescheduled
                         @if($appointment->rescheduled_date)
-                          <br><small class="d-block mt-1" style="font-size: 0.75em; font-weight: normal;">
+                            <br><small class="d-block mt-1" style="font-size: 0.7em; font-weight: normal;">
                             {{ \Carbon\Carbon::parse($appointment->rescheduled_date)->format('M d, Y') }}
                             @if($appointment->rescheduled_time)
                               {{ date('g:i A', strtotime($appointment->rescheduled_time)) }}
@@ -141,16 +217,70 @@
                         @endif
                       </span>
                     @else
-                      <span class="badge bg-secondary">Pending</span>
+                        <span class="badge bg-secondary" style="font-size: 0.75rem;">Pending</span>
+                      @endif
+                      @php
+                        $user = auth()->user();
+                        $isAdmin = $user && (int) $user->role === 4;
+                        $isStaff = $user && (int) $user->role === 2;
+                        $canReschedule = $isAdmin || ($isStaff && $appointment->assigned_staff_id == $user->id);
+                      @endphp
+                      @if($canReschedule)
+                        <button type="button" class="btn btn-sm btn-warning" style="padding: 0.2rem 0.5rem; font-size: 0.75rem; line-height: 1.2;" data-toggle="modal" data-target="#rescheduleModal{{ $appointment->id }}">
+                          <i class="bi bi-calendar-event"></i> Reschedule
+                        </button>
                     @endif
+                    </div>
                   @endif
                 </td>
                 <td>{{ ucfirst($appointment->status) }}</td>
+                <td class="text-center">
+                  @php
+                    $user = auth()->user();
+                    $isAdmin = $user && (int) $user->role === 4;
+                    $isStaff = $user && (int) $user->role === 2;
+                    $canUpdateSession = $isAdmin || ($isStaff && $appointment->assigned_staff_id == $user->id);
+                    // Allow session updates for approved and rescheduled appointments (not pending, declined, or cancelled)
+                    $isScheduledOrRescheduled = in_array($appointment->status, ['approved', 'rescheduled']) || $appointment->action_taken === 'reschedule';
+                    $canEditSession = $canUpdateSession && $isScheduledOrRescheduled;
+                  @endphp
+                  @if($canEditSession)
+                    <form action="{{ route('admin.appointments.update-session', $appointment->id) }}" method="POST" class="d-inline">
+                      @csrf
+                      @method('PUT')
+                      @if(request()->has('return_to'))
+                        <input type="hidden" name="return_to" value="{{ request('return_to') }}">
+                      @endif
+                      <select name="session" class="form-select form-select-sm" onchange="this.form.submit()" style="min-width: 120px;">
+                        <option value="">-- Select --</option>
+                        <option value="On Going" {{ $appointment->session === 'On Going' ? 'selected' : '' }}>On Going</option>
+                        <option value="Finish" {{ $appointment->session === 'Finish' ? 'selected' : '' }}>Finish</option>
+                      </select>
+                    </form>
+                  @else
+                    @if($appointment->session)
+                      <span class="badge {{ $appointment->session === 'Finish' ? 'bg-success' : 'bg-primary' }}">
+                        {{ $appointment->session }}
+                      </span>
+                    @else
+                      <span class="text-muted">-</span>
+                    @endif
+                  @endif
+                </td>
+                @if($isGuidanceCounselor)
+                  <td>{{ $appointment->reason_for_counseling ?? '-' }}</td>
+                @endif
                 <td>{{ optional($appointment->created_at)->format('M d, Y g:i A') }}</td>
               </tr>
             @empty
               <tr>
-                <td colspan="9" class="text-center py-5">
+                @php
+                  // Base columns: Full Name, Email, Appointment Date, Schedule Time, Category/Concern, Actions Taken, Status, Session, Created = 9
+                  // Guidance Counselor: 9 base + 1 (Reason for Counseling) = 10
+                  // Others: 9 base + 1 (Assigned Staff) = 10
+                  $colspan = 10;
+                @endphp
+                <td colspan="{{ $colspan }}" class="text-center py-5">
                   <div class="alert alert-info mb-0">
                     <i class="bi bi-info-circle me-2"></i>
                     <strong>No data available</strong>
@@ -166,9 +296,148 @@
         {{ $appointments->links() }}
       </div>
 
-      <!-- Approve Modal -->
+      {{-- Patients History Section --}}
+      @if(isset($patientsHistory) && $patientsHistory->count() > 0)
+      <div class="mt-5">
+        <h3 class="mb-3"><span class="section-header">Patients History</span></h3>
+        <p class="text-muted mb-3">Completed appointments (session marked as Finish), sorted by students and faculty.</p>
+        <div class="table-responsive">
+          <table class="table table-bordered align-middle">
+            <thead>
+              <tr class="text-center" style="background-color:midnightblue; color:white">
+                <th>Type</th>
+                <th>Full Name</th>
+                <th>Email</th>
+                <th>Appointment Date</th>
+                <th>Schedule Time</th>
+                <th>Category / Concern</th>
+                @unless($isGuidanceCounselor)
+                <th>Assigned Staff</th>
+                @endunless
+                <th>Actions Taken</th>
+                <th>Status</th>
+                <th>Session</th>
+                @if($isGuidanceCounselor)
+                  <th>Reason for Counseling</th>
+                @endif
+                <th>Created</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach($patientsHistory as $appointment)
+                <tr>
+                  <td class="text-center">
+                    @php
+                      $userRole = $appointment->user ? (int) $appointment->user->role : null;
+                    @endphp
+                    @if($userRole === 1)
+                      <span class="badge bg-primary">Student</span>
+                    @elseif($userRole === 2)
+                      <span class="badge bg-info text-dark">Faculty</span>
+                    @else
+                      <span class="badge bg-secondary">Other</span>
+                    @endif
+                  </td>
+                  <td>{{ $appointment->full_name }}</td>
+                  <td>{{ $appointment->email }}</td>
+                  <td>
+                    @if($appointment->action_taken === 'reschedule' && $appointment->rescheduled_date)
+                      {{ \Carbon\Carbon::parse($appointment->rescheduled_date)->format('M d, Y') }}
+                    @else
+                      {{ optional($appointment->appointment_date)->format('M d, Y') }}
+                    @endif
+                  </td>
+                  <td>
+                    @if($appointment->action_taken === 'reschedule' && $appointment->rescheduled_time)
+                      {{ date('g:i A', strtotime($appointment->rescheduled_time)) }}
+                    @else
+                      {{ $appointment->appointment_time ? date('g:i A', strtotime($appointment->appointment_time)) : '-' }}
+                    @endif
+                  </td>
+                  <td>
+                    @php
+                      $isGuidanceCounselorAppointment = $appointment->concern && (
+                          stripos($appointment->concern, 'Guidance') !== false && 
+                          (stripos($appointment->concern, 'Counselor') !== false || stripos($appointment->concern, 'Counsellor') !== false)
+                      );
+                    @endphp
+                    @if($isGuidanceCounselorAppointment && $appointment->category)
+                      @php
+                        $categoryColors = [
+                          'Red' => '#dc3545',
+                          'Blue' => '#0d6efd',
+                          'Yellow' => '#ffc107'
+                        ];
+                        $bgColor = $categoryColors[$appointment->category] ?? '#6c757d';
+                      @endphp
+                      <span style="background-color: {{ $bgColor }}; color: white; padding: 4px 12px; border-radius: 4px; font-weight: bold;">
+                        {{ $appointment->category }}
+                      </span>
+                    @else
+                      {{ $appointment->concern }}
+                    @endif
+                  </td>
+                  @unless($isGuidanceCounselor)
+                  <td>
+                    @if(!empty($appointment->concern))
+                      {{ $appointment->concern }}
+                    @elseif($appointment->assignedStaff)
+                      {{ $appointment->assignedStaff->first_name }} {{ $appointment->assignedStaff->last_name }}
+                    @else
+                      <span class="text-muted">Unassigned</span>
+                    @endif
+                  </td>
+                  @endunless
+                  <td class="text-center">
+                    @if($appointment->action_taken === 'approve')
+                      <span class="badge bg-success" style="font-size: 0.75rem;">
+                        <i class="bi bi-check-circle"></i> Approved
+                      </span>
+                    @elseif($appointment->action_taken === 'reschedule')
+                      <span class="badge bg-warning text-dark" style="font-size: 0.75rem;">
+                        <i class="bi bi-calendar-event"></i> Rescheduled
+                        @if($appointment->rescheduled_date)
+                          <br><small class="d-block mt-1" style="font-size: 0.7em; font-weight: normal;">
+                            {{ \Carbon\Carbon::parse($appointment->rescheduled_date)->format('M d, Y') }}
+                            @if($appointment->rescheduled_time)
+                              {{ date('g:i A', strtotime($appointment->rescheduled_time)) }}
+                            @endif
+                          </small>
+                        @endif
+                      </span>
+                    @else
+                      <span class="badge bg-secondary" style="font-size: 0.75rem;">Pending</span>
+                    @endif
+                  </td>
+                  <td>{{ ucfirst($appointment->status) }}</td>
+                  <td class="text-center">
+                    <span class="badge bg-success" style="font-size: 0.75rem;">
+                      <i class="bi bi-check-circle"></i> Finish
+                    </span>
+                  </td>
+                  @if($isGuidanceCounselor)
+                    <td>{{ $appointment->reason_for_counseling ?? '-' }}</td>
+                  @endif
+                  <td>{{ optional($appointment->created_at)->format('M d, Y g:i A') }}</td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+      </div>
+      @endif
+
+      <!-- Modals -->
       @foreach($appointments as $appointment)
-        @if($appointment->status === 'pending')
+        @php
+          $user = auth()->user();
+          $isAdmin = $user && (int) $user->role === 4;
+          $isStaff = $user && (int) $user->role === 2;
+          $canReschedule = $isAdmin || ($isStaff && $appointment->assigned_staff_id == $user->id);
+          $canApproveOrDecline = $appointment->status === 'pending';
+        @endphp
+
+        @if($canApproveOrDecline)
           <!-- Approve Modal -->
           <div class="modal fade" id="approveModal{{ $appointment->id }}" tabindex="-1" aria-labelledby="approveModalLabel{{ $appointment->id }}" aria-hidden="true">
             <div class="modal-dialog">
@@ -233,7 +502,9 @@
               </div>
             </div>
           </div>
+        @endif
 
+        @if($canReschedule && $appointment->action_taken !== 'decline')
           <!-- Reschedule Modal -->
           <div class="modal fade" id="rescheduleModal{{ $appointment->id }}" tabindex="-1" aria-labelledby="rescheduleModalLabel{{ $appointment->id }}" aria-hidden="true">
             <div class="modal-dialog">
@@ -256,6 +527,16 @@
                     <p><strong>Date:</strong> {{ optional($appointment->appointment_date)->format('M d, Y') }}</p>
                     <p><strong>Time:</strong> {{ $appointment->appointment_time ? date('g:i A', strtotime($appointment->appointment_time)) : '-' }}</p>
                     
+                    @if($appointment->action_taken === 'reschedule' && $appointment->rescheduled_date)
+                      <hr>
+                      <p class="text-warning"><strong>Current Scheduled Date/Time:</strong></p>
+                      <p><strong>Date:</strong> {{ \Carbon\Carbon::parse($appointment->rescheduled_date)->format('M d, Y') }}</p>
+                      <p><strong>Time:</strong> {{ $appointment->rescheduled_time ? date('g:i A', strtotime($appointment->rescheduled_time)) : '-' }}</p>
+                      @if($appointment->action_reason)
+                        <p><strong>Previous Reason:</strong> {{ $appointment->action_reason }}</p>
+                      @endif
+                    @endif
+                    
                     <hr>
                     
                     <div class="row g-3 mt-2">
@@ -263,19 +544,23 @@
                         <label for="rescheduleDate{{ $appointment->id }}" class="form-label">
                           New Date <span class="text-danger">*</span>
                         </label>
-                        <input type="date" class="form-control" id="rescheduleDate{{ $appointment->id }}" name="appointment_date" required min="{{ date('Y-m-d', strtotime('+1 day')) }}">
+                        <input type="date" class="form-control" id="rescheduleDate{{ $appointment->id }}" name="appointment_date" 
+                          value="{{ $appointment->rescheduled_date ? \Carbon\Carbon::parse($appointment->rescheduled_date)->format('Y-m-d') : (optional($appointment->appointment_date)->format('Y-m-d') ?? '') }}" 
+                          required min="{{ date('Y-m-d', strtotime('+1 day')) }}">
                       </div>
                       <div class="col-md-6">
                         <label for="rescheduleTime{{ $appointment->id }}" class="form-label">
                           New Time <span class="text-danger">*</span>
                         </label>
-                        <input type="time" class="form-control" id="rescheduleTime{{ $appointment->id }}" name="appointment_time" required>
+                        <input type="time" class="form-control" id="rescheduleTime{{ $appointment->id }}" name="appointment_time" 
+                          value="{{ $appointment->rescheduled_time ? date('H:i', strtotime($appointment->rescheduled_time)) : ($appointment->appointment_time ? date('H:i', strtotime($appointment->appointment_time)) : '') }}" 
+                          required>
                       </div>
                       <div class="col-12">
                         <label for="rescheduleReason{{ $appointment->id }}" class="form-label">
                           Reason for rescheduling (optional)
                         </label>
-                        <textarea class="form-control" id="rescheduleReason{{ $appointment->id }}" name="reschedule_reason" rows="3" placeholder="Please provide a short description why this appointment is rescheduled (optional)..."></textarea>
+                        <textarea class="form-control" id="rescheduleReason{{ $appointment->id }}" name="reschedule_reason" rows="3" placeholder="Please provide a short description why this appointment is rescheduled (optional)...">{{ $appointment->action_reason ?? '' }}</textarea>
                       </div>
                     </div>
                   </div>

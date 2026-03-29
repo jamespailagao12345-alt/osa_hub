@@ -39,6 +39,8 @@
             </tbody>
         </table>
     </div>
-    <a href="{{ route('student.dashboard') }}" class="btn btn-secondary mt-3">Back to Dashboard</a>
+    <div class="admin-back-btn-wrap" style="margin-top: 1rem;">
+        <a href="{{ route('student.dashboard') }}" class="btn btn-secondary">Back</a>
+    </div>
 </div>
 @endsection

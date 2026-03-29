@@ -9,14 +9,14 @@ class MessageController extends Controller
 {
     public function index()
     {
-        // Show messages between assistant-staff and assigned staff
+        // Show messages between student leaders and assigned staff
         // $messages = ...
         return view('assistant.messages.index');
     }
 
     public function send(Request $request)
     {
-        // Send message to assigned staff or other assistant-staff
+        // Send message to assigned staff or other student leaders
         // $recipientId = $request->input('recipient_id');
         // $content = $request->input('content');
         // ...

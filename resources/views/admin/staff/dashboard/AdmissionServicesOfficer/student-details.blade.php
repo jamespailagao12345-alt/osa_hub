@@ -4,9 +4,11 @@
 
 @section('content')
 <div class="container-fluid">
-  <div class="row mb-3">
+  <div class="row">
     <div class="col-12">
-      <a href="{{ route('admin.staff.dashboard.AdmissionServicesOfficer.student-management') }}" class="btn btn-secondary">&larr; Back to Student Management</a>
+      <div class="admin-back-btn-wrap">
+        <a href="{{ route('admin.staff.dashboard.AdmissionServicesOfficer.student-management') }}" class="btn btn-secondary">&larr; Back to Student Management</a>
+      </div>
     </div>
   </div>
   
@@ -23,13 +25,13 @@
         @if($isStaff)
           <a href="{{ route('staff.organizations.index') }}" class="list-group-item list-group-item-action">My Organization</a>
         @endif
-        <a href="{{ route('admin.events.index') }}" class="list-group-item list-group-item-action">All Events</a>
         @if($isAdmin)
           <a href="{{ route('admin.events.index') }}#create" class="list-group-item list-group-item-action">Create Event</a>
         @endif
-        <a href="{{ route('admin.participants.export') }}" class="list-group-item list-group-item-action">Participants History</a>
-        <a href="{{ route('admin.staff.dashboard.report', ['designation' => $designationName]) }}" class="list-group-item list-group-item-action">Reports</a>
         <a href="{{ route('admin.staff.dashboard.AdmissionServicesOfficer.student-management') }}" class="list-group-item list-group-item-action">Student Management</a>
+        <a href="{{ route('admin.qrscan') }}" class="list-group-item list-group-item-action">
+          <i class="bi bi-qr-code-scan"></i> Scan QR Code
+        </a>
       </div>
     </div>
     
@@ -37,7 +39,7 @@
       <h2 class="mb-3">Student Details</h2>
       
       <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header" style="background-color: midnightblue; color: white;">
           <h5 class="mb-0">Personal Information</h5>
         </div>
         <div class="card-body">
@@ -61,7 +63,7 @@
             <div class="col-md-9">{{ $student->contact_number ?? $student->user->contact_number ?? 'N/A' }}</div>
           </div>
           <div class="row mb-3">
-            <div class="col-md-3"><strong>Gender:</strong></div>
+            <div class="col-md-3"><strong>Sex:</strong></div>
             <div class="col-md-9">{{ ucfirst($student->gender ?? $student->user->gender ?? 'N/A') }}</div>
           </div>
           <div class="row mb-3">
@@ -89,11 +91,19 @@
           @endif
           <div class="row mb-3">
             <div class="col-md-3"><strong>Place of Birth:</strong></div>
-            <div class="col-md-9">{{ $student->place_of_birth ?? $student->user->place_of_birth ?? 'N/A' }}</div>
+            <div class="col-md-9">{{ optional($student->user->personalInformation)->place_of_birth ?? $student->place_of_birth ?? $student->user->place_of_birth ?? 'N/A' }}</div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Nationality:</strong></div>
+            <div class="col-md-9">{{ optional($student->user->personalInformation->nationality)->name ?? optional($student->user->personalInformation)->nationality ?? 'N/A' }}</div>
+          </div>
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Religion:</strong></div>
+            <div class="col-md-9">{{ optional($student->user->personalInformation)->religion ?? 'N/A' }}</div>
           </div>
           <div class="row mb-3">
             <div class="col-md-3"><strong>Complete Home Address:</strong></div>
-            <div class="col-md-9">{{ $student->complete_home_address ?? $student->user->complete_home_address ?? 'N/A' }}</div>
+            <div class="col-md-9">{{ optional($student->user->homeAddress)->complete_address ?? $student->complete_home_address ?? $student->user->complete_home_address ?? 'N/A' }}</div>
           </div>
           @if($student->personal_data_sheet_image || ($student->user && $student->user->image))
           <div class="row mb-3">
@@ -112,9 +122,134 @@
           @endif
         </div>
       </div>
+
+      @php
+        $pwdInfo = $student->user->pwdInformation ?? null;
+        $indigenousInfo = $student->user->indigenousMember ?? null;
+        $govAffiliation = $student->user->governmentAffiliation ?? null;
+        $fraternityInfo = $student->user->fraternityMember ?? null;
+      @endphp
+
+      @if($pwdInfo && $pwdInfo->is_pwd)
+      <div class="card mb-4">
+        <div class="card-header" style="background-color: #17a2b8; color: white;">
+          <h5 class="mb-0">PWD Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>PWD Status:</strong></div>
+            <div class="col-md-9"><span class="badge bg-info">Yes</span></div>
+          </div>
+          @if($pwdInfo->pwd_id_number)
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>PWD ID Number:</strong></div>
+            <div class="col-md-9">{{ $pwdInfo->pwd_id_number }}</div>
+          </div>
+          @endif
+          @if($pwdInfo->disability_type)
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Disability Type:</strong></div>
+            <div class="col-md-9">{{ $pwdInfo->disability_type }}</div>
+          </div>
+          @endif
+          @if($pwdInfo->pwd_id_image)
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>PWD ID Image:</strong></div>
+            <div class="col-md-9">
+              <img src="{{ Storage::url($pwdInfo->pwd_id_image) }}" alt="PWD ID" style="max-width: 300px; max-height: 300px; border: 1px solid #ddd; border-radius: 5px;">
+            </div>
+          </div>
+          @endif
+        </div>
+      </div>
+      @endif
+
+      @if($indigenousInfo && $indigenousInfo->is_indigenous_group_member)
+      <div class="card mb-4">
+        <div class="card-header" style="background-color: #28a745; color: white;">
+          <h5 class="mb-0">Indigenous Member Information</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Indigenous Group Member:</strong></div>
+            <div class="col-md-9"><span class="badge bg-success">Yes</span></div>
+          </div>
+          @if($indigenousInfo->indigenous_group_specify)
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Indigenous Group:</strong></div>
+            <div class="col-md-9">{{ $indigenousInfo->indigenous_group_specify }}</div>
+          </div>
+          @endif
+          @if($indigenousInfo->tribal_affiliation)
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Tribal Affiliation:</strong></div>
+            <div class="col-md-9">{{ $indigenousInfo->tribal_affiliation }}</div>
+          </div>
+          @endif
+        </div>
+      </div>
+      @endif
+
+      @if($govAffiliation && $govAffiliation->is_government_member == 'yes')
+      <div class="card mb-4">
+        <div class="card-header" style="background-color: #6c757d; color: white;">
+          <h5 class="mb-0">Government Affiliation</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Government Member:</strong></div>
+            <div class="col-md-9"><span class="badge bg-secondary">Yes</span></div>
+          </div>
+          @if($govAffiliation->government_level)
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Government Level:</strong></div>
+            <div class="col-md-9">{{ ucfirst(str_replace('_', ' ', $govAffiliation->government_level)) }}</div>
+          </div>
+          @endif
+          @if($govAffiliation->government_role_position)
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Role/Position:</strong></div>
+            <div class="col-md-9">{{ $govAffiliation->government_role_position }}</div>
+          </div>
+          @endif
+          @if($govAffiliation->government_unit_name)
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Government Unit:</strong></div>
+            <div class="col-md-9">{{ $govAffiliation->government_unit_name }}</div>
+          </div>
+          @endif
+        </div>
+      </div>
+      @endif
+
+      @if($fraternityInfo && $fraternityInfo->fraternity_sorority_name)
+      <div class="card mb-4">
+        <div class="card-header" style="background-color: #dc3545; color: white;">
+          <h5 class="mb-0">Fraternity/Sorority Membership</h5>
+        </div>
+        <div class="card-body">
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Name:</strong></div>
+            <div class="col-md-9">{{ $fraternityInfo->fraternity_sorority_name }}</div>
+          </div>
+          @if($fraternityInfo->fraternity_sorority_position)
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Position:</strong></div>
+            <div class="col-md-9">{{ $fraternityInfo->fraternity_sorority_position }}</div>
+          </div>
+          @endif
+          @if($fraternityInfo->type)
+          <div class="row mb-3">
+            <div class="col-md-3"><strong>Type:</strong></div>
+            <div class="col-md-9">{{ ucfirst($fraternityInfo->type) }}</div>
+          </div>
+          @endif
+        </div>
+      </div>
+      @endif
       
       <div class="card mb-4">
-        <div class="card-header bg-info text-white">
+        <div class="card-header" style="background-color: #ffc107; color: white;">
           <h5 class="mb-0">Academic Information</h5>
         </div>
         <div class="card-body">
@@ -166,7 +301,7 @@
       @endphp
       @if($parentSpouseGuardian)
       <div class="card mb-4">
-        <div class="card-header bg-secondary text-white">
+        <div class="card-header" style="background-color: #ffc107; color: white;">
           <h5 class="mb-0">Parent/Spouse/Guardian Information</h5>
         </div>
         <div class="card-body">
@@ -194,7 +329,7 @@
       @endphp
       @if($elementarySchool || $highSchool || $collegeName)
       <div class="card mb-4">
-        <div class="card-header bg-success text-white">
+        <div class="card-header" style="background-color: #ffc107; color: white;">
           <h5 class="mb-0">Schools Attended</h5>
         </div>
         <div class="card-body">
@@ -246,7 +381,7 @@
       @endphp
       @if($form137 || $tor || $goodMoral || $birthCert || $marriageCert)
       <div class="card mb-4">
-        <div class="card-header bg-warning text-dark">
+        <div class="card-header" style="background-color: #ffc107; color: white;">
           <h5 class="mb-0">Entrance Credentials Presented</h5>
         </div>
         <div class="card-body">

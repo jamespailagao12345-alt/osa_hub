@@ -19,6 +19,7 @@ class OrganizationFile extends Model
         'description',
         'file_size',
         'mime_type',
+        'status',
     ];
 
     protected $casts = [

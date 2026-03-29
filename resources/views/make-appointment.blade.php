@@ -43,6 +43,24 @@
                             @endforeach
                         @endfor
                     </select>
+                </div>
+                <div class="col-12 col-md-6 py-2">
+                    <label for="contact_number" class="form-label">Contact Number</label>
+                    <input type="tel" id="contact_number" name="contact_number" value="{{ old('contact_number') }}" autocomplete="tel" class="form-control" placeholder="Contact number" required>
+                </div>
+                <div class="col-12 col-md-6 py-2">
+                    <label for="concern" class="form-label">Concern</label>
+                    <select id="concern" name="concern" class="form-control" required>
+                        <option value="visitation" @selected(old('concern', 'visitation') == 'visitation')>Visitation</option>
+                        @if(isset($concerns))
+                            @foreach($concerns as $designation)
+                                @if($designation != 'visitation')
+                                    <option value="{{ $designation }}" @selected(old('concern') == $designation)>{{ $designation }}</option>
+                                @endif
+                            @endforeach
+                        @endif
+                    </select>
+                </div>
 @push('scripts')
 <script>
 document.addEventListener('DOMContentLoaded', function() {
@@ -83,43 +101,6 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 @endpush
-                </div>
-</div>
-@push('scripts')
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Restrict date picker to weekdays only
-    var dateInput = document.getElementById('appointment_date');
-    if (dateInput) {
-        dateInput.addEventListener('change', function() {
-            var d = new Date(this.value);
-            var day = d.getDay();
-            if (day === 0 || day === 6) { // Sunday=0, Saturday=6
-                alert('Please select a weekday (Monday to Friday).');
-                this.value = '';
-            }
-        });
-    }
-});
-</script>
-@endpush
-                <div class="col-12 col-md-6 py-2">
-                    <label for="contact_number" class="form-label">Contact Number</label>
-                    <input type="tel" id="contact_number" name="contact_number" value="{{ old('contact_number') }}" autocomplete="tel" class="form-control" placeholder="Contact number" required>
-                </div>
-                <div class="col-12 col-md-6 py-2">
-                    <label for="concern" class="form-label">Concern</label>
-                    <select id="concern" name="concern" class="form-control" required>
-                        <option value="visitation" @selected(old('concern', 'visitation') == 'visitation')>Visitation</option>
-                        @if(isset($concerns))
-                            @foreach($concerns as $designation)
-                                @if($designation != 'visitation')
-                                    <option value="{{ $designation }}" @selected(old('concern') == $designation)>{{ $designation }}</option>
-                                @endif
-                            @endforeach
-                        @endif
-                    </select>
-                </div>
                 <div class="col-12 text-center py-2">
                     <button type="submit" class="btn btn-primary mt-3 wow zoomIn">Submit Request</button>
                 </div>

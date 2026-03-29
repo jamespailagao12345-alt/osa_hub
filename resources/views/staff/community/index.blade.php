@@ -21,14 +21,13 @@
       .community-title { display: block !important; }
       .community-title h3 { margin: 0; }
       .community-title span {
-        background-color: #ffffff; /* white background */
-        color: midnightblue; /* consistent navy text */
+        background-color: midnightblue; /* midnightblue background for main header */
+        color: white; /* white text */
         display: block; /* full-width box */
         width: 100%;
         box-sizing: border-box;
         padding: .5rem 1rem; /* align with card header/content padding */
         border: none; /* remove all borders */
-        border-bottom: 1px solid midnightblue; /* keep only bottom border */
         border-radius: 0; /* no rounding for underline style */
         margin-left: 0; /* align edges with card below */
       }
@@ -40,8 +39,8 @@
 
   <div @if(request()->routeIs('admin.*')) id="adminMain" class="col-md-10" @else class="col-md-9 col-lg-10" @endif>
       @if(request()->routeIs('admin.*'))
-      <div class="mb-3">
-        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Dashboard</a>
+      <div class="admin-back-btn-wrap">
+        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back</a>
       </div>
       @endif
       <div class="d-flex justify-content-between align-items-center mb-3 community-title">
@@ -49,7 +48,7 @@
       </div>
 
       <div class="card mb-4">
-        <div class="card-header">Post a Message</div>
+        <div class="card-header" style="background-color: midnightblue; color: white;">Post a Message</div>
         <div class="card-body">
           <form method="POST" action="{{ route('staff.community.store') }}" enctype="multipart/form-data">
             @csrf
@@ -83,7 +82,7 @@
       </div>
 
       <div class="card">
-        <div class="card-header">Latest Messages</div>
+        <div class="card-header" style="background-color: #ffc107; color: white;">Latest Messages</div>
         <div class="card-body">
           @if($messages->isEmpty())
             <p class="text-muted">No messages yet.</p>

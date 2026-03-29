@@ -11,42 +11,228 @@
                 @if(isset($organization))
                     <a href="{{ route('admin.organizations.profile', $organization->id) }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Organization Profile</a>
                 @else
-                    <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Dashboard</a>
+                    <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back</a>
                 @endif
             </div>
 
             <div class="py-3">
                 @if(isset($organization))
                     <h1 class="h4 mb-4">{{ $organization->name }} - Organizational Structure</h1>
-                @else
-                    <h1 class="h4 mb-4">Organizational Structure (Admin → Staff)</h1>
-                @endif
-
-                <!-- Organizational Structure Chart -->
-                <div class="card mb-4 wow fadeInUp" style="margin: 0 7rem; padding-top: 2rem; padding-bottom: 2rem;" data-wow-delay="150ms">
-                    <div class="card-header" style="background-color: midnightblue; color: white; position: relative;">
-                        <h5 class="mb-0">
-                            <i class="bi bi-diagram-3"></i> 
-                            @if(isset($organization))
-                                Organizational Structure (Staff → Assistants)
-                            @else
-                                Organizational Structure (Admin → Staff)
-                            @endif
-                        </h5>
-                        <button type="button" id="toggleOrgChart" class="btn btn-sm btn-light" style="position: absolute; right: 15px; top: 50%; transform: translateY(-50%);">
-                            <i class="bi bi-chevron-up" id="toggleIcon"></i>
-                        </button>
+                    <!-- Organizational Structure Chart -->
+                    <div id="orgChartContainer" style="position: relative; width: 100%; height: 700px; background: #F5F5F5; overflow: auto; overflow-x: auto; overflow-y: auto;">
+                        <div id="orgChart" style="width: max-content; min-width: 100%; height: max-content; min-height: 100%;"></div>
                     </div>
-                    <div class="card-body" id="orgChartBody" style="background-color: white; color: black; padding: 15px;">
-                        <div id="orgChartContainer" style="position: relative; width: 100%; height: 700px; border: 1px solid #ddd; border-radius: 5px; background: #F5F5F5; overflow: auto; overflow-x: auto; overflow-y: auto;">
-                            @if(isset($organization))
-                                <div id="orgChart" style="width: max-content; min-width: 100%; height: max-content; min-height: 100%;"></div>
-                            @else
-                                <div id="adminOrgChart" style="width: max-content; min-width: 100%; height: max-content; min-height: 100%;"></div>
+                @else
+                    <h1 class="h4 mb-4">OSA Central Hub - Organizational Structure</h1>
+                    
+                    <!-- Plain Organizational Structure -->
+                    @if(isset($structureData) && $structureData)
+                        <div class="org-structure-plain">
+                            <!-- OSA Head (Level 0) -->
+                            @if($structureData['admin'])
+                                <div class="org-level level-0">
+                                    <div class="org-box org-admin">
+                                        <div class="org-image-container">
+                                            @if($structureData['admin']['image'])
+                                                <img src="{{ $structureData['admin']['image'] }}" alt="{{ $structureData['admin']['name'] }}" class="org-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                <div class="org-image-placeholder" style="display: none;">👤</div>
+                                            @else
+                                                <div class="org-image-placeholder">👤</div>
+                                            @endif
+                                        </div>
+                                        <div class="org-name">{{ $structureData['admin']['name'] }}</div>
+                                        <div class="org-designation">{{ $structureData['admin']['designation'] }}</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Connection Line -->
+                                <div class="org-connector"></div>
+                            @endif
+
+                            <!-- OSA Staff (Level 1) -->
+                            @if(!empty($structureData['osaStaff']))
+                                <div class="org-level level-1">
+                                    <div class="org-staff-row">
+                                        @foreach($structureData['osaStaff'] as $index => $staff)
+                                            <div class="org-staff-group" data-staff-group="osa-{{ $index }}">
+                                                <!-- OSA Staff Member -->
+                                                <div class="org-box org-osa-staff org-staff-clickable" data-toggle-assistants="osa-{{ $index }}">
+                                                    <div class="org-image-container">
+                                                        @if($staff['image'])
+                                                            <img src="{{ $staff['image'] }}" alt="{{ $staff['name'] }}" class="org-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                            <div class="org-image-placeholder" style="display: none;">👤</div>
+                                                        @else
+                                                            <div class="org-image-placeholder">👤</div>
+                                                        @endif
+                                                    </div>
+                                                    <div class="org-name">{{ $staff['name'] }}</div>
+                                                    <div class="org-designation">{{ $staff['designation'] }}</div>
+                                                    @if(!empty($staff['organizations']) || !empty($staff['assistants']))
+                                                        <div class="org-toggle-indicator">▼ Click to view organizations</div>
+                                                    @endif
+                                                </div>
+                                                
+                                                <!-- Organizations (Level 2) - Hidden by default -->
+                                                @if(!empty($staff['organizations']) || !empty($staff['assistants']))
+                                                    <div class="org-organizations-container" id="organizations-osa-{{ $index }}" style="display: none;">
+                                                        <div class="org-connector-small"></div>
+                                                        <div class="org-organizations-row">
+                                                            @if(!empty($staff['organizations']))
+                                                                @foreach($staff['organizations'] as $org)
+                                                                    <div class="org-box org-organization org-org-clickable" 
+                                                                         data-toggle-assistants="osa-{{ $index }}-org-{{ $org['id'] }}"
+                                                                         data-org-name="{{ $org['name'] }}">
+                                                                        <div class="org-name">{{ $org['name'] }}</div>
+                                                                        <div class="org-toggle-indicator-small">▼ Click to view assistants</div>
+                                                                    </div>
+                                                                @endforeach
+                                                            @else
+                                                                @php
+                                                                    // If no organizations in staff data, get unique organizations from assistants
+                                                                    $orgsFromAssistants = [];
+                                                                    if (!empty($staff['assistants'])) {
+                                                                        foreach ($staff['assistants'] as $orgName => $orgAssistants) {
+                                                                            $orgsFromAssistants[] = [
+                                                                                'name' => $orgName,
+                                                                                'id' => $orgAssistants[0]['organization_id'] ?? null
+                                                                            ];
+                                                                        }
+                                                                    }
+                                                                @endphp
+                                                                @foreach($orgsFromAssistants as $org)
+                                                                    <div class="org-box org-organization org-org-clickable" 
+                                                                         data-toggle-assistants="osa-{{ $index }}-org-{{ $org['id'] ?? md5($org['name']) }}"
+                                                                         data-org-name="{{ $org['name'] }}">
+                                                                        <div class="org-name">{{ $org['name'] }}</div>
+                                                                        <div class="org-toggle-indicator-small">▼ Click to view assistants</div>
+                                                                    </div>
+                                                                @endforeach
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Student Leaders (Level 3) - Hidden by default, shown when organization is clicked -->
+                                                    @if(!empty($staff['assistants']))
+                                                        @foreach($staff['assistants'] as $orgName => $orgAssistants)
+                                                            @php
+                                                                $orgId = $orgAssistants[0]['organization_id'] ?? md5($orgName);
+                                                            @endphp
+                                                            <div class="org-assistants-container" id="assistants-osa-{{ $index }}-org-{{ $orgId }}" style="display: none;">
+                                                                <div class="org-connector-small"></div>
+                                                                <div class="org-assistants-group">
+                                                                    <div class="org-assistants-org-header">{{ $orgName }}</div>
+                                                                    <div class="org-assistants-row">
+                                                                        @foreach($orgAssistants as $assistant)
+                                                                            <div class="org-box org-assistant">
+                                                                                <div class="org-name">{{ $assistant['name'] }}</div>
+                                                                                <div class="org-position">{{ $assistant['position'] ?? 'Student Leader' }}</div>
+                                                                            </div>
+                                                                        @endforeach
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    @endif
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
+                            @endif
+
+                            <!-- Staff with Designations (Level 1) -->
+                            @if(!empty($structureData['designationStaff']))
+                                <div class="org-level level-1">
+                                    <div class="org-staff-row">
+                                        @foreach($structureData['designationStaff'] as $index => $staff)
+                                            <div class="org-staff-group" data-staff-group="{{ $index }}">
+                                                <!-- Staff with Designation -->
+                                                <div class="org-box org-designation-staff org-staff-clickable" data-toggle-assistants="{{ $index }}">
+                                                    <div class="org-image-container">
+                                                        @if($staff['image'])
+                                                            <img src="{{ $staff['image'] }}" alt="{{ $staff['name'] }}" class="org-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                                                            <div class="org-image-placeholder" style="display: none;">👤</div>
+                                                        @else
+                                                            <div class="org-image-placeholder">👤</div>
+                                                        @endif
+                                                    </div>
+                                                    <div class="org-name">{{ $staff['name'] }}</div>
+                                                    <div class="org-designation">{{ $staff['designation'] }}</div>
+                                                    @if(!empty($staff['organizations']) || !empty($staff['assistants']))
+                                                        <div class="org-toggle-indicator">▼ Click to view organizations</div>
+                                                    @endif
+                                                </div>
+                                                
+                                                <!-- Organizations (Level 2) - Hidden by default -->
+                                                @if(!empty($staff['organizations']) || !empty($staff['assistants']))
+                                                    <div class="org-organizations-container" id="organizations-{{ $index }}" style="display: none;">
+                                                        <div class="org-connector-small"></div>
+                                                        <div class="org-organizations-row">
+                                                            @if(!empty($staff['organizations']))
+                                                                @foreach($staff['organizations'] as $org)
+                                                                    <div class="org-box org-organization org-org-clickable" 
+                                                                         data-toggle-assistants="{{ $index }}-org-{{ $org['id'] }}"
+                                                                         data-org-name="{{ $org['name'] }}">
+                                                                        <div class="org-name">{{ $org['name'] }}</div>
+                                                                        <div class="org-toggle-indicator-small">▼ Click to view assistants</div>
+                                                                    </div>
+                                                                @endforeach
+                                                            @else
+                                                                @php
+                                                                    // If no organizations in staff data, get unique organizations from assistants
+                                                                    $orgsFromAssistants = [];
+                                                                    if (!empty($staff['assistants'])) {
+                                                                        foreach ($staff['assistants'] as $orgName => $orgAssistants) {
+                                                                            $orgsFromAssistants[] = [
+                                                                                'name' => $orgName,
+                                                                                'id' => $orgAssistants[0]['organization_id'] ?? null
+                                                                            ];
+                                                                        }
+                                                                    }
+                                                                @endphp
+                                                                @foreach($orgsFromAssistants as $org)
+                                                                    <div class="org-box org-organization org-org-clickable" 
+                                                                         data-toggle-assistants="{{ $index }}-org-{{ $org['id'] ?? md5($org['name']) }}"
+                                                                         data-org-name="{{ $org['name'] }}">
+                                                                        <div class="org-name">{{ $org['name'] }}</div>
+                                                                        <div class="org-toggle-indicator-small">▼ Click to view assistants</div>
+                                                                    </div>
+                                                                @endforeach
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                    
+                                                    <!-- Student Leaders (Level 3) - Hidden by default, shown when organization is clicked -->
+                                                    @if(!empty($staff['assistants']))
+                                                        @foreach($staff['assistants'] as $orgName => $orgAssistants)
+                                                            @php
+                                                                $orgId = $orgAssistants[0]['organization_id'] ?? md5($orgName);
+                                                            @endphp
+                                                            <div class="org-assistants-container" id="assistants-{{ $index }}-org-{{ $orgId }}" style="display: none;">
+                                                                <div class="org-connector-small"></div>
+                                                                <div class="org-assistants-group">
+                                                                    <div class="org-assistants-org-header">{{ $orgName }}</div>
+                                                                    <div class="org-assistants-row">
+                                                                        @foreach($orgAssistants as $assistant)
+                                                                            <div class="org-box org-assistant">
+                                                                                <div class="org-name">{{ $assistant['name'] }}</div>
+                                                                                <div class="org-position">{{ $assistant['position'] ?? 'Student Leader' }}</div>
+                                                                            </div>
+                                                                        @endforeach
+                                                                    </div>
+                                                                </div>
+                                                            </div>
+                                                        @endforeach
+                                                    @endif
+                                                @endif
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                </div>
                             @endif
                         </div>
-                    </div>
-                </div>
+                    @endif
+                @endif
             </div>
         </main>
     </div>
@@ -209,7 +395,8 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 });
 @else
-// Admin to Staff Organizational Structure
+// Admin to Staff Organizational Structure (only render if plain structure is not available)
+@if(!isset($structureData) || !$structureData)
 document.addEventListener('DOMContentLoaded', function() {
     // Helper function to escape HTML
     function escapeHtml(text) {
@@ -224,6 +411,10 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     var orgData = @json($orgStructure);
+    
+    // Debug: log the data structure
+    console.log('Organizational Structure Data:', orgData);
+    console.log('Nodes count:', orgData.nodes ? orgData.nodes.length : 0);
     
     if (orgData.nodes && orgData.nodes.length > 0) {
         var nodes = new vis.DataSet(orgData.nodes.map(function(node) {
@@ -303,6 +494,50 @@ document.addEventListener('DOMContentLoaded', function() {
                     '<div style="font-weight: bold; font-size: 11px; margin-bottom: 4px; color: #333; line-height: 1.2; word-wrap: break-word;">' + escapeHtml(staffName) + '</div>' +
                     '<div style="font-size: 10px; color: #666; margin-bottom: 2px; line-height: 1.2; word-wrap: break-word;">' + escapeHtml(designation) + '</div>' +
                     '<div style="font-size: 9px; color: #999; line-height: 1.2; word-wrap: break-word;">' + escapeHtml(dept) + '</div>' +
+                    '</div>';
+                node.labelType = 'html';
+            } else if (node.group === 'assistant') {
+                // Student Leader nodes - smaller boxes with orange border
+                nodeStyle.shape = 'box';
+                nodeStyle.color = {
+                    background: '#FFFFFF', // White background
+                    border: '#FF9800', // Orange border
+                    highlight: {
+                        background: '#FFF3E0',
+                        border: '#F57C00'
+                    }
+                };
+                nodeStyle.font.size = 9;
+                nodeStyle.font.color = '#333333';
+                nodeStyle.widthConstraint = { maximum: 160 };
+                nodeStyle.heightConstraint = { maximum: 140 };
+                nodeStyle.shapeProperties = {
+                    borderRadius: 5
+                };
+                
+                // Create custom HTML label with circular image container
+                var labelParts = node.label.split('\\n');
+                var assistantName = labelParts[0] || 'Assistant name';
+                var position = labelParts[1] || 'Student Leader';
+                var dept = node.department || 'No Department';
+                var imageUrl = node.image || null;
+                
+                // Build custom HTML label with circular image container
+                var imageContainer = '';
+                if (imageUrl) {
+                    imageContainer = '<div style="width: 50px; height: 50px; border-radius: 50%; margin: 0 auto 8px; overflow: hidden; border: 2px solid #FF9800; background: #E0E0E0; position: relative;">' +
+                        '<img src="' + escapeHtml(imageUrl) + '" style="width: 100%; height: 100%; object-fit: cover; display: block;" ' +
+                        'onerror="this.onerror=null; this.style.display=\'none\'; this.parentElement.innerHTML=\'<div style=\'width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#E0E0E0;color:#666;font-size:20px;\'>👤</div>\';">' +
+                        '</div>';
+                } else {
+                    imageContainer = '<div style="width: 50px; height: 50px; border-radius: 50%; margin: 0 auto 8px; overflow: hidden; border: 2px solid #FF9800; background: #E0E0E0; display: flex; align-items: center; justify-content: center; color: #666; font-size: 20px;">👤</div>';
+                }
+                
+                node.label = '<div style="text-align: center; padding: 8px; width: 160px; box-sizing: border-box; font-family: Arial, sans-serif;">' +
+                    imageContainer +
+                    '<div style="font-weight: bold; font-size: 10px; margin-bottom: 3px; color: #333; line-height: 1.2; word-wrap: break-word;">' + escapeHtml(assistantName) + '</div>' +
+                    '<div style="font-size: 9px; color: #666; margin-bottom: 2px; line-height: 1.2; word-wrap: break-word;">' + escapeHtml(position) + '</div>' +
+                    '<div style="font-size: 8px; color: #999; line-height: 1.2; word-wrap: break-word;">' + escapeHtml(dept) + '</div>' +
                     '</div>';
                 node.labelType = 'html';
             }
@@ -415,27 +650,6 @@ document.addEventListener('DOMContentLoaded', function() {
             // Allow the network to expand beyond viewport
             // The container will show scrollbars when needed
         });
-        
-        // Toggle minimize/maximize functionality
-        var toggleBtn = document.getElementById('toggleOrgChart');
-        var toggleIcon = document.getElementById('toggleIcon');
-        var orgChartBody = document.getElementById('orgChartBody');
-        var isMinimized = false;
-        
-        if (toggleBtn) {
-            toggleBtn.addEventListener('click', function() {
-                isMinimized = !isMinimized;
-                if (isMinimized) {
-                    orgChartBody.style.display = 'none';
-                    toggleIcon.className = 'bi bi-chevron-down';
-                    toggleBtn.title = 'Maximize';
-                } else {
-                    orgChartBody.style.display = 'block';
-                    toggleIcon.className = 'bi bi-chevron-up';
-                    toggleBtn.title = 'Minimize';
-                }
-            });
-        }
 
         // Add click event to show details and organization links
         network.on('click', function(params) {
@@ -524,8 +738,81 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     } else {
         // Show message if no data
-        document.getElementById('adminOrgChart').innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;"><p>No organizational structure data available.</p></div>';
+        var container = document.getElementById('adminOrgChart');
+        if (container) {
+            container.innerHTML = '<div style="display: flex; align-items: center; justify-content: center; height: 100%; color: #666;"><p>No organizational structure data available.</p></div>';
+        }
     }
+});
+@endif
+@endif
+
+@if(isset($structureData) && $structureData)
+// Toggle organizations visibility on staff click, then assistants on organization click
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle staff click - show/hide organizations
+    const staffBoxes = document.querySelectorAll('.org-staff-clickable');
+    
+    staffBoxes.forEach(function(staffBox) {
+        staffBox.addEventListener('click', function() {
+            const toggleId = this.getAttribute('data-toggle-assistants');
+            const organizationsContainer = document.getElementById('organizations-' + toggleId);
+            const indicator = this.querySelector('.org-toggle-indicator');
+            
+            if (organizationsContainer) {
+                if (organizationsContainer.style.display === 'none' || organizationsContainer.style.display === '') {
+                    organizationsContainer.style.display = 'flex';
+                    if (indicator) {
+                        indicator.textContent = '▲ Click to hide organizations';
+                    }
+                } else {
+                    organizationsContainer.style.display = 'none';
+                    // Also hide all assistants containers for this staff
+                    const allAssistantContainers = document.querySelectorAll('[id^="assistants-' + toggleId + '-org-"]');
+                    allAssistantContainers.forEach(function(container) {
+                        container.style.display = 'none';
+                    });
+                    // Reset organization indicators
+                    const orgBoxes = organizationsContainer.querySelectorAll('.org-org-clickable');
+                    orgBoxes.forEach(function(orgBox) {
+                        const orgIndicator = orgBox.querySelector('.org-toggle-indicator-small');
+                        if (orgIndicator) {
+                            orgIndicator.textContent = '▼ Click to view assistants';
+                        }
+                    });
+                    if (indicator) {
+                        indicator.textContent = '▼ Click to view organizations';
+                    }
+                }
+            }
+        });
+    });
+    
+    // Handle organization click - show/hide assistants for that organization
+    const orgBoxes = document.querySelectorAll('.org-org-clickable');
+    
+    orgBoxes.forEach(function(orgBox) {
+        orgBox.addEventListener('click', function(e) {
+            e.stopPropagation(); // Prevent triggering staff click
+            const toggleId = this.getAttribute('data-toggle-assistants');
+            const assistantsContainer = document.getElementById('assistants-' + toggleId);
+            const indicator = this.querySelector('.org-toggle-indicator-small');
+            
+            if (assistantsContainer) {
+                if (assistantsContainer.style.display === 'none' || assistantsContainer.style.display === '') {
+                    assistantsContainer.style.display = 'flex';
+                    if (indicator) {
+                        indicator.textContent = '▲ Click to hide assistants';
+                    }
+                } else {
+                    assistantsContainer.style.display = 'none';
+                    if (indicator) {
+                        indicator.textContent = '▼ Click to view assistants';
+                    }
+                }
+            }
+        });
+    });
 });
 @endif
 </script>
@@ -548,79 +835,386 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 }
 @else
-#adminOrgChart {
-    min-height: 400px;
+/* Plain Organizational Structure Styles */
+.org-structure-plain {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem;
+    min-height: 600px;
 }
 
-/* Scrollbar styling for organizational structure container */
-#orgChartContainer {
-    scrollbar-width: thin;
-    scrollbar-color: #9C27B0 #F5F5F5;
+.org-level {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+    margin-bottom: 2rem;
 }
 
-#orgChartContainer::-webkit-scrollbar {
-    width: 12px;
-    height: 12px;
+.org-level.level-0 {
+    margin-bottom: 1.5rem;
 }
 
-#orgChartContainer::-webkit-scrollbar-track {
-    background: #F5F5F5;
-    border-radius: 6px;
+.org-staff-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1.5rem;
+    width: 100%;
 }
 
-#orgChartContainer::-webkit-scrollbar-thumb {
-    background: #9C27B0;
-    border-radius: 6px;
-    border: 2px solid #F5F5F5;
+.org-staff-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin: 0 1rem;
 }
 
-#orgChartContainer::-webkit-scrollbar-thumb:hover {
-    background: #7B1FA2;
+.org-assistants-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    max-width: 800px;
 }
 
-#orgChartContainer::-webkit-scrollbar-corner {
-    background: #F5F5F5;
+.org-organizations-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
 }
 
-/* Toggle button styling */
-#toggleOrgChart {
-    z-index: 10;
+.org-organizations-row {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 1rem;
+    margin-top: 0.5rem;
+    max-width: 800px;
 }
 
-#toggleOrgChart:hover {
-    background-color: #e0e0e0 !important;
+.org-organization {
+    border-color: #2196F3;
+    background: #E3F2FD;
+    min-width: 180px;
+    max-width: 200px;
+    padding: 1rem;
+    cursor: pointer;
+    user-select: none;
 }
 
-@media (max-width: 1400px) {
-    .card.mb-4.wow.fadeInUp[style*="margin: 0 7rem"] {
-        margin: 0 6rem !important;
-    }
+.org-organization:hover {
+    background: #BBDEFB !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.org-organization .org-name {
+    color: midnightblue;
+    font-weight: 600;
+    font-size: 0.9rem;
+}
+
+.org-toggle-indicator-small {
+    font-size: 0.7rem;
+    color: #1976D2;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+.org-assistants-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.org-assistants-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.org-assistants-org-header {
+    font-weight: bold;
+    font-size: 0.95rem;
+    color: midnightblue;
+    background-color: #E3F2FD;
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    text-align: center;
+    width: fit-content;
+    min-width: 200px;
+}
+
+.org-box {
+    background: #FFFFFF;
+    border: 2px solid;
+    border-radius: 8px;
+    padding: 1rem;
+    text-align: center;
+    min-width: 180px;
+    max-width: 200px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+.org-box:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.org-admin {
+    border-color: #2196F3;
+    background: #2196F3;
+    color: white;
+    min-width: 220px;
+    max-width: 250px;
+}
+
+.org-osa-staff {
+    border-color: #4CAF50;
+    background: #FFFFFF;
+}
+
+.org-designation-staff {
+    border-color: #9C27B0;
+    background: #FFFFFF;
+}
+
+.org-assistant {
+    border-color: #FF9800;
+    background: #FFFFFF;
+    min-width: 150px;
+    max-width: 170px;
+    padding: 0.75rem;
+}
+
+.org-assistant .org-image-container {
+    display: none;
+}
+
+.org-assistants-container {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.org-staff-clickable {
+    cursor: pointer;
+    user-select: none;
+}
+
+.org-staff-clickable:hover {
+    background: #F3E5F5 !important;
+}
+
+.org-toggle-indicator {
+    font-size: 0.75rem;
+    color: #9C27B0;
+    margin-top: 0.5rem;
+    font-style: italic;
+}
+
+.org-image-container {
+    width: 80px;
+    height: 80px;
+    margin: 0 auto 0.75rem;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 3px solid;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #E0E0E0;
+}
+
+.org-admin .org-image-container {
+    border-color: #FFFFFF;
+    width: 100px;
+    height: 100px;
+}
+
+.org-osa-staff .org-image-container {
+    border-color: #4CAF50;
+}
+
+.org-designation-staff .org-image-container {
+    border-color: #9C27B0;
+}
+
+.org-assistant .org-image-container {
+    border-color: #FF9800;
+    width: 60px;
+    height: 60px;
+}
+
+.org-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.org-image-placeholder {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    color: #666;
+}
+
+.org-admin .org-image-placeholder {
+    color: #FFFFFF;
+    font-size: 2.5rem;
+}
+
+.org-assistant .org-image-placeholder {
+    font-size: 1.5rem;
+}
+
+.org-name {
+    font-weight: bold;
+    font-size: 0.95rem;
+    margin-bottom: 0.25rem;
+    color: #333;
+    word-wrap: break-word;
+}
+
+.org-admin .org-name {
+    color: #FFFFFF;
+    font-size: 1.1rem;
+}
+
+.org-assistant .org-name {
+    font-size: 0.85rem;
+}
+
+.org-designation {
+    font-size: 0.85rem;
+    color: #666;
+    word-wrap: break-word;
+}
+
+.org-admin .org-designation {
+    color: #FFFFFF;
+    font-size: 0.95rem;
+}
+
+.org-assistant .org-designation {
+    font-size: 0.75rem;
+}
+
+.org-position {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.org-assistant .org-position {
+    font-size: 0.75rem;
+    color: #555;
+    font-weight: 500;
+}
+
+.org-position {
+    font-size: 0.8rem;
+    color: #666;
+    margin-top: 0.25rem;
+}
+
+.org-assistant .org-position {
+    font-size: 0.75rem;
+    color: #555;
+    font-weight: 500;
+}
+
+.org-connector {
+    width: 2px;
+    height: 40px;
+    background: #424242;
+    margin: 0.5rem 0;
+}
+
+.org-connector-small {
+    width: 2px;
+    height: 20px;
+    background: #424242;
+    margin: 0.5rem 0;
 }
 
 @media (max-width: 992px) {
-    .card.mb-4.wow.fadeInUp[style*="margin: 0 7rem"] {
-        margin: 0 4rem !important;
+    .org-staff-row {
+        gap: 1rem;
     }
-    #orgChartContainer {
-        height: 500px !important;
+    
+    .org-assistants-row {
+        gap: 0.75rem;
+    }
+    
+    .org-box {
+        min-width: 160px;
+        max-width: 180px;
+    }
+    
+    .org-assistant {
+        min-width: 130px;
+        max-width: 150px;
     }
 }
 
 @media (max-width: 768px) {
-    .card.mb-4.wow.fadeInUp[style*="margin: 0 7rem"] {
-        margin: 0 3rem !important;
+    .org-staff-row {
+        gap: 0.75rem;
     }
-    #orgChartContainer {
-        height: 400px !important;
+    
+    .org-box {
+        min-width: 140px;
+        max-width: 160px;
+        padding: 0.75rem;
+    }
+    
+    .org-image-container {
+        width: 60px;
+        height: 60px;
+    }
+    
+    .org-admin .org-image-container {
+        width: 80px;
+        height: 80px;
+    }
+    
+    .org-name {
+        font-size: 0.85rem;
+    }
+    
+    .org-designation {
+        font-size: 0.75rem;
     }
 }
 
 @media (max-width: 576px) {
-    .card.mb-4.wow.fadeInUp[style*="margin: 0 7rem"] {
-        margin: 0 2.5rem !important;
+    .org-staff-row {
+        flex-direction: column;
+        align-items: center;
     }
-    #orgChartContainer {
-        height: 350px !important;
+    
+    .org-staff-group {
+        margin: 0.5rem 0;
+    }
+    
+    .org-box {
+        width: 100%;
+        max-width: 250px;
     }
 }
 @endif

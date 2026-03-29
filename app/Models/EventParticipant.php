@@ -10,7 +10,7 @@ class EventParticipant extends Model
     use HasFactory;
 
     protected $fillable = [
-        'event_id', 'user_id', 'qr_scanned', 'scanned_at', 'scanned_by'
+        'event_id', 'user_id', 'qr_scanned', 'scanned_at', 'scanned_by', 'attendance_status'
     ];
 
     protected $casts = [

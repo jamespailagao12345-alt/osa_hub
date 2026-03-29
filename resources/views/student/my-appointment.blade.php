@@ -22,7 +22,7 @@
             <h5>Organization Registration Request</h5>
             <button type="button" class="btn btn-warning w-100" data-bs-toggle="modal" data-bs-target="#orgRegModal">Request Organization Registration</button>
           </div>
-          @if(auth()->user()->designation === 'assistant-staff')
+          @if(auth()->user()->designation === 'student-leader')
           <div class="mb-3">
             <h5>Organizational Dashboard</h5>
             <button type="button" class="btn btn-info w-100" data-bs-toggle="modal" data-bs-target="#assistantSwitchModal">Open</button>

@@ -6,7 +6,7 @@
     @include('admin.partials.sidebar')
     <main class="col-md-10 py-4">
         <div class="admin-back-btn-wrap mb-3">
-            <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Dashboard</a>
+            <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back</a>
         </div>
 
         @if(session('success'))
@@ -24,8 +24,17 @@
         @endif
 
         <div class="py-3">
-            <h1 class="h4 mb-4">Organizations Management</h1>
-            <p class="text-muted small mb-3">Manage organizations and their official email addresses. Official emails are used to send notifications about events (approval, decline, missing requirements).</p>
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <div>
+                    <h1 class="h4 mb-2">Organizations Management</h1>
+                    <p class="text-muted small mb-0">Manage organizations and their official email addresses. Official emails are used to send notifications about events (approval, decline, missing requirements).</p>
+                </div>
+                <div>
+                    <a href="{{ route('admin.organizations.create') }}" class="btn btn-success btn-lg" style="background-color: #28a745; border-color: #28a745; color: white; padding: 10px 20px; font-size: 16px; font-weight: bold; text-decoration: none; display: inline-block; min-width: 200px;">
+                        ➕ CREATE NEW ORGANIZATION
+                    </a>
+                </div>
+            </div>
 
             <div class="bg-white shadow rounded-lg overflow-x-auto">
                 <table class="table table-striped table-bordered">
@@ -34,6 +43,7 @@
                             <th>Organization Name</th>
                             <th>Department</th>
                             <th>Official Email</th>
+                            <th>Organization Moderator</th>
                             <th>Actions</th>
                         </tr>
                     </thead>
@@ -50,19 +60,26 @@
                                 @endif
                             </td>
                             <td>
+                                @if($organization->staff->count() > 0)
+                                    @foreach($organization->staff as $staff)
+                                        {{ $staff->first_name }} {{ $staff->last_name }}
+                                        @if(!$loop->last), @endif
+                                    @endforeach
+                                @else
+                                    <span class="text-muted">Not Assigned</span>
+                                @endif
+                            </td>
+                            <td>
                                 <div class="d-flex gap-2">
                                     <a href="{{ route('admin.organizations.profile', $organization->id) }}" class="btn btn-sm btn-info">
                                         <i class="bi bi-person-circle me-1"></i>View Profile
                                     </a>
-                                    <button type="button" class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#emailModal{{ $organization->id }}">
-                                        <i class="bi bi-envelope me-1"></i>{{ $organization->official_email ? 'Update Email' : 'Add Email' }}
-                                    </button>
                                 </div>
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="4" class="text-center py-4">
+                            <td colspan="5" class="text-center py-4">
                                 <div class="text-muted">
                                     <i class="bi bi-info-circle me-2"></i>
                                     No organizations found.
@@ -78,45 +95,5 @@
   </div>
 </div>
 
-<!-- Email Modal for each organization -->
-@foreach ($organizations as $organization)
-<div class="modal fade" id="emailModal{{ $organization->id }}" tabindex="-1" aria-labelledby="emailModalLabel{{ $organization->id }}" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header bg-primary text-white">
-                <h5 class="modal-title" id="emailModalLabel{{ $organization->id }}">Set Official Email - {{ $organization->name }}</h5>
-                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <form method="POST" action="{{ route('admin.organizations.update-email', $organization->id) }}">
-                @csrf
-                @method('PUT')
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        <i class="bi bi-info-circle me-2"></i>
-                        <strong>Note:</strong> This email will be used to send notifications about:
-                        <ul class="mb-0 mt-2">
-                            <li>Event approvals</li>
-                            <li>Event declines (with reason)</li>
-                            <li>Missing requirements notifications</li>
-                        </ul>
-                    </div>
-                    <div class="mb-3">
-                        <label for="official_email{{ $organization->id }}" class="form-label">Official Email Address <span class="text-danger">*</span></label>
-                        <input type="email" class="form-control" id="official_email{{ $organization->id }}" name="official_email" value="{{ old('official_email', $organization->official_email) }}" placeholder="organization@ustp.edu.ph" required>
-                        <small class="form-text text-muted">Enter the official email address for this organization.</small>
-                        @error('official_email')
-                            <div class="text-danger">{{ $message }}</div>
-                        @enderror
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                    <button type="submit" class="btn btn-primary">Save Email</button>
-                </div>
-            </form>
-        </div>
-    </div>
-</div>
-@endforeach
 @endsection
 

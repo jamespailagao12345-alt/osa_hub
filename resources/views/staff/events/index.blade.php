@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="row">
         @include('staff.partials.sidebar')
-        <main class="col-md-9 col-lg-10">
+        <main id="staffMain" class="col-md-10">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h2>Events Created by Me</h2>
                 <a href="{{ route('staff.events.create') }}" class="btn btn-primary">Create Event</a>
@@ -89,7 +89,10 @@
                                             </form>
                                             <form action="{{ route('staff.events.decline', $event->id) }}" method="POST" class="d-inline">
                                                 @csrf
-                                                <button type="submit" class="btn btn-sm btn-danger">Decline</button>
+                                                <div class="input-group input-group-sm d-inline-flex" style="width: auto;">
+                                                    <input type="text" name="reason" class="form-control form-control-sm" placeholder="Decline reason" required style="min-width: 150px;">
+                                                    <button type="submit" class="btn btn-sm btn-danger">Decline</button>
+                                                </div>
                                             </form>
                                         </td>
                                     </tr>

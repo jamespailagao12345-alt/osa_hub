@@ -8,7 +8,7 @@
         @include('admin.partials.sidebar')
         <main class="col-md-10 py-4">
             <div class="admin-back-btn-wrap">
-                <a href="{{ route('admin.events.index') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Events</a>
+                <a href="{{ route('admin.events.index') }}" class="btn btn-secondary rounded-pill px-3">Back</a>
             </div>
             <h2 class="mb-4">Create Approved Event</h2>
 
@@ -29,7 +29,7 @@
                 </div>
             @endif
 
-            <form method="POST" action="{{ route('admin.events.store') }}">
+            <form method="POST" action="{{ route('admin.events.store') }}" enctype="multipart/form-data">
                 @csrf
                 <div class="mb-3">
                     <label for="name" class="form-label">Event Name</label>
@@ -67,6 +67,27 @@
                 <div class="mb-3 mt-3">
                     <label for="location" class="form-label">Location</label>
                     <input type="text" class="form-control" id="location" name="location" value="{{ old('location') }}">
+                </div>
+                <div class="mb-3">
+                    <label for="points" class="form-label">Event Points</label>
+                    <input type="number" class="form-control" id="points" name="points" value="{{ old('points') }}" min="0" step="1">
+                    <small class="form-text text-muted">Points awarded to students who submit feedback for this event. Leave empty if no points are awarded.</small>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Required Student Participation</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="required_student_participation" name="required_student_participation" value="1" {{ old('required_student_participation') ? 'checked' : '' }}>
+                        <label class="form-check-label" for="required_student_participation">
+                            Enable student participation tracking via QR code scanning
+                        </label>
+                        <small class="form-text text-muted d-block">When enabled, a QR code will be generated for this event and all staff/student leaders can scan student QR codes for participation.</small>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <label for="event_files" class="form-label">Event Files (Optional)</label>
+                    <input type="file" name="event_files[]" id="event_files" class="form-control" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.csv,.txt">
+                    <small class="form-text text-muted">You can upload multiple files. Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, XLSX, XLS, CSV, TXT (Max 10MB per file). These files will be visible to Admin and OSA Staff.</small>
+                    <div id="file-list" class="mt-2"></div>
                 </div>
                 <button type="submit" class="btn btn-primary">Create Event</button>
                 <a href="{{ route('admin.events.index') }}" class="btn btn-outline-secondary">Cancel</a>

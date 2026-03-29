@@ -7,6 +7,14 @@
   <div class="row">
     @include('admin.partials.sidebar')
     <main class="col-md-10 py-4">
+      @php
+        $currentUser = auth()->user();
+        $isAdmin = $currentUser && (int) $currentUser->role === 4;
+        $backRoute = $isAdmin ? route('admin.staff.dashboard') : route('admin.staff.dashboard');
+      @endphp
+      <div class="admin-back-btn-wrap mb-3" style="margin-top: 40px;">
+        <a href="{{ $backRoute }}" class="btn btn-secondary rounded-pill px-3">&lt; Back</a>
+      </div>
       @if(session('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
           {{ session('success') }}
@@ -16,14 +24,11 @@
 
       <div class="d-flex justify-content-between align-items-center mb-4">
         <h2 class="h4 mb-0">My Events - Student Org. Moderator</h2>
-        <a href="{{ route('admin.staff.dashboard.StudentOrgModerator.create-event') }}" class="btn btn-primary">
-          <i class="bi bi-plus-circle"></i> Create Event
-        </a>
       </div>
 
       <!-- My Organizations -->
       <div class="card mb-4">
-        <div class="card-header bg-primary text-white">
+        <div class="card-header" style="background-color: midnightblue; color: white;">
           <h5 class="mb-0">My Organizations</h5>
         </div>
         <div class="card-body">
@@ -34,9 +39,9 @@
           @else
             <div class="row">
               @foreach($userOrganizations as $organization)
-                <div class="col-md-6 mb-3">
+                <div class="col-12 mb-3">
                   <div class="card border-primary">
-                    <div class="card-header bg-secondary text-white">
+                    <div class="card-header" style="background-color: #ffc107; color: white;">
                       <h6 class="mb-0">
                         <a href="{{ route('admin.organizations.profile', $organization->id) }}" style="color: white; text-decoration: none; cursor: pointer;" onmouseover="this.style.textDecoration='underline'" onmouseout="this.style.textDecoration='none'">
                           {{ $organization->name }}
@@ -54,9 +59,9 @@
                       </div>
                       <div class="d-flex flex-column gap-2">
                         <a href="{{ route('staff.organizations.assistants', $organization->id) }}" class="btn btn-primary btn-sm">
-                          <i class="bi bi-people"></i> My Assistant Staff
+                          <i class="bi bi-people"></i> My Student Leaders
                         </a>
-                        <a href="{{ route('staff.assistants.create', ['organization_id' => $organization->id]) }}" class="btn btn-success btn-sm">
+                        <a href="{{ route('staff.student-leaders.create', ['organization_id' => $organization->id]) }}" class="btn btn-success btn-sm">
                           <i class="bi bi-person-plus"></i> Add Assistant
                         </a>
                         <a href="{{ route('admin.staff.dashboard.StudentOrgModerator.create-event', ['organization_id' => $organization->id]) }}" class="btn btn-warning btn-sm">
@@ -79,8 +84,7 @@
 
       @if($events->isEmpty())
         <div class="alert alert-info">
-          <i class="bi bi-info-circle"></i> No events created yet. 
-          <a href="{{ route('admin.staff.dashboard.StudentOrgModerator.create-event') }}" class="alert-link">Create your first event</a>
+          <i class="bi bi-info-circle"></i> No events created yet. Please create an event from within an organization above.
         </div>
       @else
         {{-- Show events grouped by organization --}}
@@ -90,7 +94,7 @@
           @endphp
           @if($org)
             <div class="card mb-3">
-              <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+              <div class="card-header d-flex justify-content-between align-items-center" style="background-color: midnightblue; color: white;">
                 <h5 class="mb-0">{{ $org->name }}</h5>
                 <span class="badge bg-light text-dark">{{ $orgEvents->count() }} event(s)</span>
               </div>

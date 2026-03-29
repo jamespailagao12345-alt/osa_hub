@@ -9,14 +9,14 @@ class EventController extends Controller
 {
     public function index()
     {
-        // List all events for assistant-staff (own, department, courses)
+        // List all events for student leaders (own, department, courses)
         // $events = ...
         return view('assistant.events.index');
     }
 
     public function created()
     {
-        // List events created by this assistant-staff
+        // List events created by this student leader
         // $createdEvents = ...
         return view('assistant.events.created');
     }
@@ -48,7 +48,7 @@ class EventController extends Controller
         $event->event_date = $validated['event_date'];
         $event->created_by = auth()->id();
         $event->save();
-        return redirect()->route('assistant.events.index')->with('success', 'Event created successfully.');
+        return redirect()->route('student-leader.events.index')->with('success', 'Event created successfully.');
     }
 
     public function calendar()

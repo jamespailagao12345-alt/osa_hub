@@ -8,7 +8,7 @@
 <div class="mb-2" data-birth-age-pair>
   <label for="{{ $name }}" class="form-label">{{ $label }}</label>
   <div class="d-flex gap-2 align-items-center">
-    <input type="date" name="{{ $name }}" id="{{ $name }}" value="{{ old($name, $value) }}" class="form-control" {{ $required ? 'required' : '' }}>
+    <input type="date" name="{{ $name }}" id="{{ $name }}" value="{{ old($name, $value) }}" class="form-control" max="{{ date('Y-m-d', strtotime('-1 day')) }}" min="1900-01-01" {{ $required ? 'required' : '' }}>
     <input type="number" name="{{ $ageName }}" id="{{ $ageName }}" class="form-control" placeholder="Age" readonly style="max-width: 100px;">
   </div>
 </div>

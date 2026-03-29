@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\Auth;
 
 class OrganizationRegistrationRequestController extends Controller
 {
-    // Show all requests for assistant-staff approval
+    // Show all requests for student leader approval
     public function index()
     {
         $requests = OrganizationRegistrationRequest::with('student', 'organization')->where('status', 'pending')->get();
@@ -19,28 +19,16 @@ class OrganizationRegistrationRequestController extends Controller
     public function store(Request $request)
     {
         $user = Auth::user();
-        // Only allow students (role 1)
-        if ($user->role !== 1) {
-            abort(403);
+        // Allow students (role 1) and student leaders (role 3) - students with role 3 are still students
+        $userRole = (int) $user->role;
+        if ($userRole !== 1 && $userRole !== 3) {
+            abort(403, 'Only students can submit organization registration requests.');
         }
-        // Check if student already has 3 approved non-academic organizations
-        // Count approved organization registration requests (where status = 'approved')
-        // Only count non-academic organizations (those without department_id)
-        $approvedRequests = OrganizationRegistrationRequest::where('student_id', $user->id)
-            ->where('status', 'approved')
-            ->with('organization')
-            ->get();
-        
-        $approvedCount = $approvedRequests->filter(function ($req) {
-            return $req->organization && !$req->organization->department_id;
-        })->count();
-        
-        if ($approvedCount >= 3) {
-            return back()->with('error', 'You have reached the limit of 3 non-academic organizations.');
-        }
+        // Removed the 3 organization limit - students can now submit as many requests as they want
         $request->validate([
             'organization_id' => 'required|exists:organizations,id',
             'details' => 'nullable|string|max:1000',
+            'position' => 'nullable|string|max:255',
         ]);
         
         // Ensure the organization is non-academic (no department_id)
@@ -50,38 +38,32 @@ class OrganizationRegistrationRequestController extends Controller
             return back()->with('error', 'You cannot apply for a department-related organization. You are automatically a member of your department\'s organization.')->withInput();
         }
         
-        // Prevent duplicate pending requests
-        $exists = OrganizationRegistrationRequest::where('student_id', $user->id)
-            ->where('organization_id', $request->organization_id)
-            ->where('status', 'pending')
-            ->exists();
-        if ($exists) {
-            return back()->with('error', 'You already have a pending request for this organization.');
-        }
+        // Allow multiple pending requests (removed duplicate check to allow multiple memberships)
         OrganizationRegistrationRequest::create([
             'student_id' => $user->id,
             'organization_id' => $request->organization_id,
             'status' => 'pending',
             'details' => $request->details ?? null,
+            'position' => $request->position ?? null,
         ]);
         return back()->with('success', 'Organization registration request submitted.');
     }
 
-    // Assistant-staff approves a request
+    // Student leader approves a request
     public function approve($id)
     {
         $request = OrganizationRegistrationRequest::findOrFail($id);
         $request->status = 'approved';
         $request->save();
         // Attach organization to student via pivot table (many-to-many relationship)
-        // Check if already attached to avoid duplicates
-        if (!$request->student->otherOrganizations()->where('organizations.id', $request->organization_id)->exists()) {
-            $request->student->otherOrganizations()->attach($request->organization_id);
-        }
+        // Allow multiple memberships - attach with position if provided
+        $request->student->otherOrganizations()->attach($request->organization_id, [
+            'position' => $request->position ?? null
+        ]);
         return back()->with('success', 'Request approved.');
     }
 
-    // Assistant-staff declines a request
+    // Student leader declines a request
     public function decline($id)
     {
         $request = OrganizationRegistrationRequest::findOrFail($id);

@@ -1,0 +1,5392 @@
+{
+    "addresses": {
+        "name": "addresses",
+        "columns": {
+            "addressable": {
+                "type": "morphs",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "type": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "home",
+                    "work",
+                    "school",
+                    "emergency",
+                    "parent_guardian"
+                ]
+            },
+            "street": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "barangay": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "city_municipality": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "province": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "zip_code": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "complete_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_15_235108_create_addresses_table.php"
+        ]
+    },
+    "admin_files": {
+        "name": "admin_files",
+        "columns": {
+            "uploaded_by": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_path": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_type": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_category": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "description": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_size": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mime_type": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "status": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                ]
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "uploaded_by",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_11_13_135426_create_admin_files_table.php",
+            "2025_11_25_191417_add_status_to_file_tables.php"
+        ]
+    },
+    "appointment_files": {
+        "name": "appointment_files",
+        "columns": {
+            "appointment_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_path": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "uploaded_by": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "uploaded_by",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_05_125305_create_appointment_files_table.php"
+        ]
+    },
+    "appointments": {
+        "name": "appointments",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "full_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "email": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "appointment_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "appointment_time": {
+                "type": "time",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "concern": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "message": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "assigned_staff_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "status": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "pending",
+                    "approved",
+                    "cancelled",
+                    "rescheduled"
+                ]
+            },
+            "action_taken": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "approve",
+                    "decline",
+                    "reschedule"
+                ]
+            },
+            "action_reason": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "rescheduled_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "rescheduled_time": {
+                "type": "time",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "reason_for_counseling": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "category": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "session": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "Finish",
+                    "On Going"
+                ]
+            },
+            "reminder_sent_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "rescheduled_reminder_sent_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "remarks": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_01_15_000001_add_indexes_for_performance.php",
+            "2025_10_05_125253_create_appointments_table.php",
+            "2025_10_14_000001_drop_message_from_appointments_table.php",
+            "2025_11_01_045158_add_action_fields_to_appointments_table.php",
+            "2025_11_07_013957_add_counseling_fields_to_appointments_table.php",
+            "2025_11_12_052123_add_session_to_appointments_table.php",
+            "2025_11_12_052809_add_session_to_appointments_table.php",
+            "2025_11_12_055823_add_reminder_fields_to_appointments_table.php",
+            "2025_11_13_014519_add_remarks_to_appointments_table.php"
+        ]
+    },
+    "assistant_assignments": {
+        "name": "assistant_assignments",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "organization_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "department_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "position": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "supervisor_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "active": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "user_id",
+                "references": "users",
+                "on_delete": "restrict"
+            },
+            {
+                "column": "organization_id",
+                "references": "organizations",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_16_203000_create_assistant_assignments_table.php"
+        ]
+    },
+    "assistant_leadership_backgrounds": {
+        "name": "assistant_leadership_backgrounds",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "organization": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "position": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "year": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "order": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "user_id",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_02_000002_create_assistant_leadership_backgrounds_table.php"
+        ]
+    },
+    "attendances": {
+        "name": "attendances",
+        "columns": {
+            "student_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "event_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "scan_time": {
+                "type": "dateTime",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "status": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "Present",
+                    "Late",
+                    "Absent"
+                ]
+            },
+            "excuse_letter": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "student_id",
+                "references": "users",
+                "on_delete": "restrict"
+            },
+            {
+                "column": "event_id",
+                "references": "events",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_17_000002_create_attendances_table.php"
+        ]
+    },
+    "cache": {
+        "name": "cache",
+        "columns": {
+            "key": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "expiration": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "owner": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "0001_01_01_000001_create_cache_table.php"
+        ]
+    },
+    "cache_locks": {
+        "name": "cache_locks",
+        "columns": {
+            "key": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "expiration": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "owner": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "0001_01_01_000001_create_cache_table.php"
+        ]
+    },
+    "courses": {
+        "name": "courses",
+        "columns": {
+            "department_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_05_125113_create_courses_table.php"
+        ]
+    },
+    "departments": {
+        "name": "departments",
+        "columns": {
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "0001_01_01_000000_create_departments_table.php"
+        ]
+    },
+    "designations": {
+        "name": "designations",
+        "columns": {
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_15_000000_create_designations_table.php"
+        ]
+    },
+    "document_checklists": {
+        "name": "document_checklists",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "form_137_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "tor_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "good_moral_cert_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "birth_cert_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "marriage_cert_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "personal_data_sheet_image": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_15_235159_create_document_checklists_table.php",
+            "2025_12_16_000006_create_document_checklists_table.php"
+        ]
+    },
+    "educational_backgrounds": {
+        "name": "educational_backgrounds",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "level": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "elementary",
+                    "junior_high",
+                    "senior_high",
+                    "college",
+                    "last_school"
+                ]
+            },
+            "school_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "year_graduated": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "year_completed": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "course": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "track_strand": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "lrn": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "honors_awards": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_15_235142_create_educational_backgrounds_table.php",
+            "2025_12_16_000003_create_educational_backgrounds_table.php"
+        ]
+    },
+    "emergency_contacts": {
+        "name": "emergency_contacts",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "relation": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_15_235130_create_emergency_contacts_table.php",
+            "2025_12_16_000001_create_emergency_contacts_table.php"
+        ]
+    },
+    "event_feedback": {
+        "name": "event_feedback",
+        "columns": {
+            "event_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "feedback_text": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "rating": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "points_awarded": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "submitted_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "event_id",
+                "references": "events",
+                "on_delete": "restrict"
+            },
+            {
+                "column": "user_id",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_11_29_020253_create_event_feedback_table.php"
+        ]
+    },
+    "event_files": {
+        "name": "event_files",
+        "columns": {
+            "event_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "uploaded_by": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_path": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_type": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_size": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mime_type": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "description": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "event_id",
+                "references": "events",
+                "on_delete": "restrict"
+            },
+            {
+                "column": "uploaded_by",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_11_21_023743_create_event_files_table.php"
+        ]
+    },
+    "event_participants": {
+        "name": "event_participants",
+        "columns": {
+            "event_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "qr_scanned": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "scanned_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "scanned_by": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "attendance_status": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "Attended",
+                    "Late",
+                    "Absent"
+                ]
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "user_id",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_05_125244_create_event_participants_table.php",
+            "2025_11_28_133159_add_attendance_status_to_event_participants_table.php"
+        ]
+    },
+    "event_requirements": {
+        "name": "event_requirements",
+        "columns": {
+            "event_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "requirement_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_uploaded": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "uploaded_by": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_path": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_05_125235_create_event_requirements_table.php"
+        ]
+    },
+    "events": {
+        "name": "events",
+        "columns": {
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "description": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "start_time": {
+                "type": "dateTime",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "end_time": {
+                "type": "dateTime",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "qr_code_path": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "created_by": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "status": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "event_date": {
+                "type": "dateTime",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "organization_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "location": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "end_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "decline_reason": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "coordinator_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "required_student_participation": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "monitoring_started": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "monitoring_started_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "attended_threshold_minutes": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "late_threshold_minutes": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "absent_threshold_minutes": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "points": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "created_by",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_01_15_000001_add_indexes_for_performance.php",
+            "2025_10_05_125234_create_events_table.php",
+            "2025_10_22_230000_add_event_date_to_events_table.php",
+            "2025_10_24_120000_add_organization_id_to_events_table.php",
+            "2025_10_24_140000_add_location_to_events_table.php",
+            "2025_10_25_000001_add_end_date_to_events_table.php",
+            "2025_10_25_023535_add_qr_code_path_to_events_table.php",
+            "2025_11_01_162115_add_decline_reason_to_events_table.php",
+            "2025_11_12_050306_add_coordinator_name_to_events_table.php",
+            "2025_11_25_224119_add_required_student_participation_to_events_table.php",
+            "2025_11_28_133153_add_participation_monitoring_fields_to_events_table.php",
+            "2025_11_29_020247_add_points_to_events_table.php"
+        ]
+    },
+    "failed_jobs": {
+        "name": "failed_jobs",
+        "columns": {
+            "queue": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "reserved_at": {
+                "type": "unsignedInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "available_at": {
+                "type": "unsignedInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "created_at": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "total_jobs": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "pending_jobs": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "failed_jobs": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "cancelled_at": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "finished_at": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "uuid": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "connection": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "failed_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "0001_01_01_000002_create_jobs_table.php"
+        ]
+    },
+    "family_members": {
+        "name": "family_members",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "relation": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "father",
+                    "mother",
+                    "guardian",
+                    "spouse"
+                ]
+            },
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "occupation": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "workplace": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "monthly_income": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "relationship": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_15_235136_create_family_members_table.php",
+            "2025_12_16_000002_create_family_members_table.php"
+        ]
+    },
+    "fraternity_members": {
+        "name": "fraternity_members",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "fraternity_sorority_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "fraternity_sorority_position": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "type": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "fraternity",
+                    "sorority"
+                ]
+            },
+            "membership_start_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "membership_end_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "notes": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_16_073954_create_fraternity_members_table.php"
+        ]
+    },
+    "government_affiliations": {
+        "name": "government_affiliations",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_government_member": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "no",
+                    "yes"
+                ]
+            },
+            "government_level": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "barangay",
+                    "municipal_city",
+                    "provincial",
+                    "national"
+                ]
+            },
+            "government_role_position": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "government_unit_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "start_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "end_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "notes": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_16_073948_create_government_affiliations_table.php"
+        ]
+    },
+    "indigenous_members": {
+        "name": "indigenous_members",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_indigenous_group_member": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "indigenous_group_specify": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "tribal_affiliation": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "notes": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_16_073942_create_indigenous_members_table.php"
+        ]
+    },
+    "job_batches": {
+        "name": "job_batches",
+        "columns": {
+            "queue": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "reserved_at": {
+                "type": "unsignedInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "available_at": {
+                "type": "unsignedInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "created_at": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "total_jobs": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "pending_jobs": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "failed_jobs": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "cancelled_at": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "finished_at": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "uuid": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "connection": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "failed_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "0001_01_01_000002_create_jobs_table.php"
+        ]
+    },
+    "jobs": {
+        "name": "jobs",
+        "columns": {
+            "queue": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "reserved_at": {
+                "type": "unsignedInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "available_at": {
+                "type": "unsignedInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "created_at": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "total_jobs": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "pending_jobs": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "failed_jobs": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "cancelled_at": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "finished_at": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "uuid": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "connection": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "failed_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "0001_01_01_000002_create_jobs_table.php"
+        ]
+    },
+    "messages": {
+        "name": "messages",
+        "columns": {
+            "sender_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "recipient_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "content": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "reply_to": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_read": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_10_000001_create_messages_table.php"
+        ]
+    },
+    "nationalities": {
+        "name": "nationalities",
+        "columns": {
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "code": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_active": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_16_073928_create_nationalities_table.php"
+        ]
+    },
+    "notifications": {
+        "name": "notifications",
+        "columns": {
+            "type": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "notifiable": {
+                "type": "morphs",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "data": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "read_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_14_112204_create_notifications_table.php"
+        ]
+    },
+    "org_structure_configs": {
+        "name": "org_structure_configs",
+        "columns": {
+            "config_key": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "staff_per_row": {
+                "type": "json",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "max_levels": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "staff_selections": {
+                "type": "json",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_11_05_071950_create_org_structure_configs_table.php",
+            "2025_11_05_073632_modify_org_structure_configs_table_add_staff_selections.php"
+        ]
+    },
+    "organization_files": {
+        "name": "organization_files",
+        "columns": {
+            "status": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                ]
+            },
+            "organization_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "uploaded_by": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_path": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_type": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "description": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_size": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mime_type": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_category": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "organization_id",
+                "references": "organizations",
+                "on_delete": "restrict"
+            },
+            {
+                "column": "uploaded_by",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_11_25_191417_add_status_to_file_tables.php",
+            "2025_12_02_000003_create_organization_files_table.php",
+            "2025_12_02_000006_add_file_category_to_organization_files_table.php"
+        ]
+    },
+    "organization_registration_requests": {
+        "name": "organization_registration_requests",
+        "columns": {
+            "student_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "organization_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "status": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "pending",
+                    "approved",
+                    "declined"
+                ]
+            },
+            "details": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "position": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_27_000000_create_organization_registration_requests_table.php",
+            "2025_11_01_202113_add_details_to_organization_registration_requests_table.php",
+            "2025_11_16_233942_add_position_to_organization_registration_requests_table.php"
+        ]
+    },
+    "organization_staff": {
+        "name": "organization_staff",
+        "columns": {
+            "organization_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "staff_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_29_000001_create_organization_staff_table.php"
+        ]
+    },
+    "organization_user": {
+        "name": "organization_user",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "organization_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "position": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_15_140000_create_organization_user_table.php",
+            "2025_11_16_233849_modify_organization_user_table_for_multiple_memberships_and_positions.php"
+        ]
+    },
+    "organizations": {
+        "name": "organizations",
+        "columns": {
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_special": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "department_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "official_email": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "acronym": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mailing_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "date_established": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_05_125144_create_organizations_table.php",
+            "2025_10_16_120000_add_department_id_to_organizations_table.php",
+            "2025_11_01_163122_add_official_email_to_organizations_table.php",
+            "2025_11_01_170559_add_profile_fields_to_organizations_table.php"
+        ]
+    },
+    "password_reset_tokens": {
+        "name": "password_reset_tokens",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "first_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "middle_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "email": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "gender": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "male",
+                    "female",
+                    "other"
+                ]
+            },
+            "birth_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "department_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "course_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "organization_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "year_level": {
+                "type": "tinyInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "student_type1": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "regular",
+                    "irregular",
+                    "transferee"
+                ]
+            },
+            "student_type2": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "paying",
+                    "scholar"
+                ]
+            },
+            "scholarship_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_contact_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_relation": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "role": {
+                "type": "tinyInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "email_verified_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "password": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "token": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "created_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "ip_address": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "user_agent": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_activity": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_05_125210_create_users_table.php"
+        ]
+    },
+    "password_resets": {
+        "name": "password_resets",
+        "columns": {
+            "email": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "token": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "created_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2014_10_12_100000_create_password_resets_table.php",
+            "2025_12_10_092129_drop_unnecessary_tables.php"
+        ]
+    },
+    "personal_information": {
+        "name": "personal_information",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "age": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "civil_status": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "single",
+                    "married",
+                    "divorced",
+                    "widowed"
+                ]
+            },
+            "maiden_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "place_of_birth": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "nationality": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "religion": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "sport": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "arts": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "technical": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_indigenous_group_member": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "indigenous_group_specify": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_pwd": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "pwd_id_image": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_government_member": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "no",
+                    "yes"
+                ]
+            },
+            "government_level": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "barangay",
+                    "municipal_city",
+                    "provincial"
+                ]
+            },
+            "government_role_position": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "living_arrangement": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "home",
+                    "boarding_house",
+                    "relatives",
+                    "working_student",
+                    "others"
+                ]
+            },
+            "living_arrangement_others_specify": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_single_parent": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "fraternity_sorority_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "fraternity_sorority_position": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "has_criminal_record": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "nationality_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_15_235153_create_personal_information_table.php",
+            "2025_12_16_000005_create_personal_information_table.php",
+            "2025_12_16_074819_migrate_data_to_new_normalized_tables.php"
+        ]
+    },
+    "pwd_information": {
+        "name": "pwd_information",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_pwd": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "pwd_id_image": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "pwd_id_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "disability_type": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "notes": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_16_073936_create_pwd_information_table.php"
+        ]
+    },
+    "scholarships": {
+        "name": "scholarships",
+        "columns": {
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_05_125159_create_scholarships_table.php"
+        ]
+    },
+    "sessions": {
+        "name": "sessions",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "first_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "middle_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "email": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "gender": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "male",
+                    "female",
+                    "other"
+                ]
+            },
+            "birth_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "department_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "course_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "organization_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "year_level": {
+                "type": "tinyInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "student_type1": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "regular",
+                    "irregular",
+                    "transferee"
+                ]
+            },
+            "student_type2": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "paying",
+                    "scholar"
+                ]
+            },
+            "scholarship_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_contact_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_relation": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "role": {
+                "type": "tinyInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "email_verified_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "password": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "token": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "created_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "ip_address": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "user_agent": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_activity": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_05_125210_create_users_table.php"
+        ]
+    },
+    "staff": {
+        "name": "staff",
+        "columns": {
+            "first_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "middle_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "email": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "password": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "designation": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "department_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "organization_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "admin_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "image": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "birth_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "gender": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "age": {
+                "type": "unsignedInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "user_id": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "service_order": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "length_of_service": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "contract_end_at": {
+                "type": "dateTime",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "employment_status": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "about_me": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "admin_id",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_01_15_000001_add_indexes_for_performance.php",
+            "2025_10_11_140000_create_staff_table.php",
+            "2025_10_15_180000_alter_staff_add_contract_fields.php",
+            "2025_10_15_190500_add_missing_staff_columns.php",
+            "2025_10_15_191000_alter_staff_length_of_service_to_string.php",
+            "2025_11_13_235832_add_about_me_to_staff_table.php",
+            "2025_12_08_163242_remove_emt_coordinator_designation.php"
+        ]
+    },
+    "staff_message_attachments": {
+        "name": "staff_message_attachments",
+        "columns": {
+            "message_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "original_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "path": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "size": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mime_type": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "message_id",
+                "references": "staff_messages",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_15_160200_create_staff_message_attachments_table.php"
+        ]
+    },
+    "staff_message_mentions": {
+        "name": "staff_message_mentions",
+        "columns": {
+            "message_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mentioned_user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "message_id",
+                "references": "staff_messages",
+                "on_delete": "restrict"
+            },
+            {
+                "column": "mentioned_user_id",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_15_160300_create_staff_message_mentions_table.php"
+        ]
+    },
+    "staff_messages": {
+        "name": "staff_messages",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "type": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "announcement",
+                    "inquiry"
+                ]
+            },
+            "content": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "parent_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "user_id",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_15_160000_create_staff_messages_table.php",
+            "2025_10_15_160100_add_parent_id_to_staff_messages_table.php"
+        ]
+    },
+    "staff_organization_files": {
+        "name": "staff_organization_files",
+        "columns": {
+            "status": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "pending",
+                    "approved",
+                    "rejected"
+                ]
+            },
+            "staff_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "organization_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_path": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_type": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_category": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "file_size": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mime_type": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "description": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "uploaded_by": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "staff_id",
+                "references": "users",
+                "on_delete": "restrict"
+            },
+            {
+                "column": "uploaded_by",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_11_25_191417_add_status_to_file_tables.php",
+            "2025_12_02_000003_create_staff_organization_files_table.php",
+            "2025_12_02_000005_make_organization_id_required_in_staff_organization_files_table.php"
+        ]
+    },
+    "staff_profiles": {
+        "name": "staff_profiles",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "department_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "designation": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "image": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "birth_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "gender": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "age": {
+                "type": "unsignedInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "middle_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "user_id",
+                "references": "users",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_11_130000_create_staff_profiles_table.php"
+        ]
+    },
+    "status_changes": {
+        "name": "status_changes",
+        "columns": {
+            "auditable_type": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "auditable_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "from_status": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "to_status": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "changed_by": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "meta": {
+                "type": "json",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_10_29_000001_create_status_changes_table.php"
+        ]
+    },
+    "student_information": {
+        "name": "student_information",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "year_level": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "student_type1": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "regular",
+                    "irregular",
+                    "transferee"
+                ]
+            },
+            "student_type2": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "paying",
+                    "scholar"
+                ]
+            },
+            "student_type": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "new",
+                    "old"
+                ]
+            },
+            "school_year": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "semester": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "academic_year": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "scholarship_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_active_scholar": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "scholarship_grant_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_12_15_235147_create_student_information_table.php",
+            "2025_12_16_000004_create_student_information_table.php"
+        ]
+    },
+    "student_points": {
+        "name": "student_points",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "event_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "feedback_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "points": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "notes": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "awarded_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [
+            {
+                "column": "user_id",
+                "references": "users",
+                "on_delete": "restrict"
+            },
+            {
+                "column": "event_id",
+                "references": "events",
+                "on_delete": "restrict"
+            }
+        ],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_11_29_020255_create_student_points_table.php"
+        ]
+    },
+    "students": {
+        "name": "students",
+        "columns": {
+            "student_id": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "first_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "middle_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "email": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "gender": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "male",
+                    "female",
+                    "other"
+                ]
+            },
+            "birth_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "department_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "course_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "organization_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "scholarship_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "year_level": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "student_type1": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "regular",
+                    "irregular",
+                    "transferee"
+                ]
+            },
+            "student_type2": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "paying",
+                    "scholar"
+                ]
+            },
+            "contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_contact_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_relation": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "user_id": {
+                "type": "unsignedBigInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "age": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "civil_status": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "single",
+                    "married",
+                    "divorced",
+                    "widowed"
+                ]
+            },
+            "maiden_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "place_of_birth": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "complete_home_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "parent_spouse_guardian": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "parent_spouse_guardian_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "elementary_school": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "elementary_address": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "elementary_year_graduated": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "high_school": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "high_school_address": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "high_school_year_graduated": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "college_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "college_address": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "college_course": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "college_year": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "school_year": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "semester": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "student_type": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "new",
+                    "old"
+                ]
+            },
+            "form_137_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "tor_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "good_moral_cert_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "birth_cert_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "marriage_cert_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "personal_data_sheet_image": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "ext_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "street": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "barangay": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "city_municipality": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "province": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "zip_code": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "nationality": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "religion": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "tel_no": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "spouse_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "spouse_contact_no": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "sport": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "arts": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "technical": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "junior_high_school_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "junior_high_school_year_completed": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "junior_high_school_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "junior_high_school_honors_awards": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_year_graduated": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_track_strand": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_lrn": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_honors_awards": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_school_attended": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_school_course": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_school_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_school_year_attended": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "father_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "father_contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "father_occupation": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "father_workplace": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "father_monthly_income": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mother_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mother_contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mother_occupation": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mother_workplace": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mother_monthly_income": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_relationship": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_occupation": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_workplace": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_monthly_income": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_active_scholar": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "scholarship_grant_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_indigenous_group_member": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "indigenous_group_specify": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_pwd": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "pwd_id_image": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_government_member": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "no",
+                    "yes"
+                ]
+            },
+            "government_level": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "barangay",
+                    "municipal_city",
+                    "provincial"
+                ]
+            },
+            "government_role_position": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "living_arrangement": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "home",
+                    "boarding_house",
+                    "relatives",
+                    "working_student",
+                    "others"
+                ]
+            },
+            "living_arrangement_others_specify": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_single_parent": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "fraternity_sorority_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "fraternity_sorority_position": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "has_criminal_record": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_01_15_000001_add_indexes_for_performance.php",
+            "2025_10_22_000001_create_students_table.php",
+            "2025_10_22_200000_add_user_id_to_students_table.php",
+            "2025_10_22_210000_change_student_id_to_user_id_in_students_table.php",
+            "2025_10_22_220000_remove_student_id_make_user_id_unique_in_students_table.php",
+            "2025_10_31_171252_add_personal_data_sheet_columns_to_users_and_students_tables.php",
+            "2025_11_05_015157_add_personal_data_sheet_image_to_students_table.php",
+            "2025_11_06_203630_add_student_information_sheet_fields_to_users_and_students_tables.php",
+            "2025_11_06_210159_add_additional_fields_to_student_information_sheet.php",
+            "2025_12_15_235642_remove_normalized_columns_from_students_table.php",
+            "2025_12_16_000008_remove_redundant_columns_from_users_and_students.php"
+        ]
+    },
+    "users": {
+        "name": "users",
+        "columns": {
+            "user_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "first_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "middle_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "email": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "gender": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "male",
+                    "female",
+                    "other"
+                ]
+            },
+            "birth_date": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "department_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "course_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "organization_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "year_level": {
+                "type": "tinyInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "student_type1": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "regular",
+                    "irregular",
+                    "transferee"
+                ]
+            },
+            "student_type2": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "paying",
+                    "scholar"
+                ]
+            },
+            "scholarship_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_contact_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "emergency_relation": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "role": {
+                "type": "tinyInteger",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "email_verified_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "password": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "token": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "created_at": {
+                "type": "timestamp",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "ip_address": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "user_agent": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_activity": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "designation": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "supervisor_id": {
+                "type": "foreignId",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "position": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "image": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "service_order": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "length_of_service": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "contract_end_at": {
+                "type": "date",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "suspended": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_imported_worksheet": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "age": {
+                "type": "integer",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "civil_status": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "single",
+                    "married",
+                    "divorced",
+                    "widowed"
+                ]
+            },
+            "maiden_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "place_of_birth": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "complete_home_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "parent_spouse_guardian": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "parent_spouse_guardian_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "elementary_school": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "elementary_address": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "elementary_year_graduated": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "high_school": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "high_school_address": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "high_school_year_graduated": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "college_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "college_address": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "college_course": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "college_year": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "school_year": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "semester": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "student_type": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "new",
+                    "old"
+                ]
+            },
+            "form_137_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "tor_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "good_moral_cert_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "birth_cert_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "marriage_cert_presented": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "ext_name": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "street": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "barangay": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "city_municipality": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "province": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "zip_code": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "nationality": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "religion": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "tel_no": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "spouse_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "spouse_contact_no": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "sport": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "arts": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "technical": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "junior_high_school_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "junior_high_school_year_completed": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "junior_high_school_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "junior_high_school_honors_awards": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_year_graduated": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_track_strand": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_lrn": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "senior_high_school_honors_awards": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_school_attended": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_school_course": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_school_address": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "last_school_year_attended": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "father_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "father_contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "father_occupation": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "father_workplace": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "father_monthly_income": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mother_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mother_contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mother_occupation": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mother_workplace": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "mother_monthly_income": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_relationship": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_contact_number": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_occupation": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_workplace": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "guardian_monthly_income": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_active_scholar": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "scholarship_grant_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_indigenous_group_member": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "indigenous_group_specify": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_pwd": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "pwd_id_image": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_government_member": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "no",
+                    "yes"
+                ]
+            },
+            "government_level": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "barangay",
+                    "municipal_city",
+                    "provincial"
+                ]
+            },
+            "government_role_position": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "living_arrangement": {
+                "type": "enum",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": [
+                    "home",
+                    "boarding_house",
+                    "relatives",
+                    "working_student",
+                    "others"
+                ]
+            },
+            "living_arrangement_others_specify": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "is_single_parent": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "fraternity_sorority_name": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "fraternity_sorority_position": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "has_criminal_record": {
+                "type": "boolean",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "suspension_reason": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "about_me": {
+                "type": "text",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            },
+            "academic_year": {
+                "type": "string",
+                "nullable": false,
+                "default": null,
+                "unique": false,
+                "enum_values": null
+            }
+        },
+        "indexes": [],
+        "foreign_keys": [],
+        "unique_constraints": [],
+        "migrations": [
+            "2025_01_15_000001_add_indexes_for_performance.php",
+            "2025_10_05_125210_create_users_table.php",
+            "2025_10_06_015154_add_designation_to_users_table.php",
+            "2025_10_09_112635_add_name_to_users_table.php",
+            "2025_10_10_041719_add_supervisor_id_to_users_table.php",
+            "2025_10_11_120000_drop_name_from_users_table.php",
+            "2025_10_16_200500_alter_users_add_assistant_optional_fields.php",
+            "2025_10_16_210200_alter_users_make_birthdate_gender_nullable.php",
+            "2025_10_16_211500_alter_users_add_suspended_flag.php",
+            "2025_10_17_000001_add_last_imported_worksheet_to_users_table.php",
+            "2025_10_31_171252_add_personal_data_sheet_columns_to_users_and_students_tables.php",
+            "2025_11_06_203630_add_student_information_sheet_fields_to_users_and_students_tables.php",
+            "2025_11_06_210159_add_additional_fields_to_student_information_sheet.php",
+            "2025_11_13_024805_add_suspension_reason_to_users_table.php",
+            "2025_11_13_235855_add_about_me_to_users_table.php",
+            "2025_12_02_000001_add_academic_year_to_users_table.php",
+            "2025_12_15_235636_remove_normalized_columns_from_users_table.php",
+            "2025_12_16_000008_remove_redundant_columns_from_users_and_students.php"
+        ]
+    }
+}

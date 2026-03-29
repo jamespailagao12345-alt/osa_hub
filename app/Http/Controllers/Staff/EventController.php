@@ -4,6 +4,9 @@ namespace App\Http\Controllers\Staff;
 
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
+use App\Notifications\EventApprovedNotification;
+use App\Mail\EventApprovedMail;
+use App\Mail\EventDeclinedMail;
 
 class EventController extends Controller
 {
@@ -137,5 +140,72 @@ class EventController extends Controller
         $departments = \App\Models\Department::all();
         $courses = \App\Models\Course::all();
         return view('staff.events-history', compact('events', 'departments', 'courses'));
+    }
+
+    public function approve($id)
+    {
+        $event = \App\Models\Event::with('organization')->findOrFail($id);
+        
+        // Check if staff can approve this event (must be admin or have appropriate permissions)
+        // For now, allow staff to approve events (can be restricted later via policy)
+        $event->update(['status' => 'approved']);
+        
+        // Notify event creator
+        if ($event->created_by) {
+            $creator = \App\Models\User::find($event->created_by);
+            if ($creator) {
+                $creator->notify(new EventApprovedNotification($event));
+            }
+        }
+        
+        // Send email to organization's official email
+        if ($event->organization && $event->organization->official_email) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($event->organization->official_email)
+                    ->send(new EventApprovedMail($event));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send event approval email to organization', [
+                    'event_id' => $event->id,
+                    'organization_id' => $event->organization->id,
+                    'email' => $event->organization->official_email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+        
+        return back()->with('success', 'Event approved and notifications sent.');
+    }
+
+    public function decline(Request $request, $id)
+    {
+        $request->validate([
+            'reason' => 'required|string|min:5|max:1000',
+        ]);
+
+        $event = \App\Models\Event::with('organization')->findOrFail($id);
+        
+        // Check if staff can decline this event (must be admin or have appropriate permissions)
+        // For now, allow staff to decline events (can be restricted later via policy)
+        $event->update([
+            'status' => 'declined',
+            'decline_reason' => $request->reason,
+        ]);
+        
+        // Send email to organization's official email
+        if ($event->organization && $event->organization->official_email) {
+            try {
+                \Illuminate\Support\Facades\Mail::to($event->organization->official_email)
+                    ->send(new EventDeclinedMail($event));
+            } catch (\Exception $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to send event decline email to organization', [
+                    'event_id' => $event->id,
+                    'organization_id' => $event->organization->id,
+                    'email' => $event->organization->official_email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
+        }
+        
+        return back()->with('success', 'Event declined and notifications sent.');
     }
 }

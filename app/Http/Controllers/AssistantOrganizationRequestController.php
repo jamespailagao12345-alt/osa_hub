@@ -20,7 +20,7 @@ class AssistantOrganizationRequestController extends Controller
         $req = OrganizationRegistrationRequest::findOrFail($id);
         $req->status = 'approved';
         $req->save();
-        return redirect()->route('assistant.organization-requests.index')->with('success', 'Request approved.');
+        return redirect()->route('student-leader.organization-requests.index')->with('success', 'Request approved.');
     }
 
     public function decline($id)
@@ -28,6 +28,6 @@ class AssistantOrganizationRequestController extends Controller
         $req = OrganizationRegistrationRequest::findOrFail($id);
         $req->status = 'declined';
         $req->save();
-        return redirect()->route('assistant.organization-requests.index')->with('success', 'Request declined.');
+        return redirect()->route('student-leader.organization-requests.index')->with('success', 'Request declined.');
     }
 }

@@ -189,6 +189,14 @@
                                                     <small class="text-muted d-block mt-1">You are automatically a member of your department's organization.</small>
                                                 </div>
                                             </div>
+                                            <!-- Position -->
+                                            <div class="row mb-3">
+                                                <label class="col-md-4 col-form-label text-md-end">Position (Optional)</label>
+                                                <div class="col-md-6">
+                                                    <input type="text" name="position" class="form-control" value="{{ old('position') }}" placeholder="e.g., President, Member, Secretary">
+                                                    <small class="text-muted d-block mt-1">Leave blank if no specific position.</small>
+                                                </div>
+                                            </div>
                                             <!-- Details -->
                                             <div class="row mb-3">
                                                 <label class="col-md-4 col-form-label text-md-end">Why do you want to join this organization?</label>
@@ -312,8 +320,8 @@ document.addEventListener('DOMContentLoaded', function() {
             console.log('Selected concern value:', selectedConcern);
             console.log('Selected concern text:', selectedText);
             
-            // Check for Guidance Counselor (with variations: Counselor, Counsellor, etc.)
-            // Also check for "Guidance Counsellor" (British spelling) or "Guidance Counselor" (American spelling)
+            // Check for Guidance Counselor (American spelling - standard)
+            // Also handle "Guidance Counsellor" (British spelling) for backward compatibility
             const concernLower = selectedConcern ? selectedConcern.toLowerCase() : '';
             const textLower = selectedText ? selectedText.toLowerCase() : '';
             

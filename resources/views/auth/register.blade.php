@@ -3,7 +3,6 @@
 @section('content')
 <!-- Registration disabled message and button hidden for welcome screen. -->
                                     <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
-                                    <option value="other" {{ old('gender') == 'other' ? 'selected' : '' }}>Other</option>
                                 </select>
                             </div>
                         </div>

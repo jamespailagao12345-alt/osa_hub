@@ -10,7 +10,7 @@ class ProfileController extends Controller
 {
     public function show()
     {
-        $user = auth()->user();
+        $user = auth()->user()->load(['department', 'course', 'organization', 'otherOrganizations']);
         return view('student.profile', compact('user'));
     }
 
@@ -27,5 +27,18 @@ class ProfileController extends Controller
         $user->password = bcrypt($request->new_password);
         $user->save();
         return back()->with('success', 'Password updated successfully.');
+    }
+
+    public function updateAboutMe(Request $request)
+    {
+        $request->validate([
+            'about_me' => 'nullable|string|max:5000',
+        ]);
+
+        $user = auth()->user();
+        $user->about_me = $request->about_me;
+        $user->save();
+
+        return back()->with('success', 'About Me information updated successfully.');
     }
 }

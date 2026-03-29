@@ -80,6 +80,46 @@
                     <label for="location" class="form-label">Location</label>
                     <input type="text" class="form-control" id="location" name="location" value="{{ old('location', $event->location) }}">
                 </div>
+                <div class="mb-3">
+                    <label class="form-label">Required Student Participation</label>
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="required_student_participation" name="required_student_participation" value="1" {{ old('required_student_participation', $event->required_student_participation ?? false) ? 'checked' : '' }}>
+                        <label class="form-check-label" for="required_student_participation">
+                            Enable student participation tracking via QR code scanning
+                        </label>
+                        <small class="form-text text-muted d-block">When enabled, a QR code will be generated for this event and all staff/student leaders can scan student QR codes for participation.</small>
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="points" class="form-label">Event Points</label>
+                    <input type="number" class="form-control" id="points" name="points" value="{{ old('points', $event->points ?? '') }}" min="0" step="1">
+                    <small class="form-text text-muted">Points awarded to students who submit feedback for this event. Leave empty if no points are awarded.</small>
+                </div>
+
+                @if($event->required_student_participation)
+                <div class="mb-3 border-top pt-3">
+                    <h5 class="mb-3">Participation Monitoring Timer Settings</h5>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="attended_threshold_minutes" class="form-label">Attended Threshold (minutes)</label>
+                            <input type="number" class="form-control" id="attended_threshold_minutes" name="attended_threshold_minutes" value="{{ old('attended_threshold_minutes', $event->attended_threshold_minutes ?? 60) }}" min="0" step="1">
+                            <small class="form-text text-muted">Students scanned within this time after monitoring starts will be marked as "Attended"</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="late_threshold_minutes" class="form-label">Late Threshold (minutes)</label>
+                            <input type="number" class="form-control" id="late_threshold_minutes" name="late_threshold_minutes" value="{{ old('late_threshold_minutes', $event->late_threshold_minutes ?? 60) }}" min="0" step="1">
+                            <small class="form-text text-muted">Students scanned after attended threshold will be marked as "Late"</small>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="absent_threshold_minutes" class="form-label">Absent Threshold (minutes)</label>
+                            <input type="number" class="form-control" id="absent_threshold_minutes" name="absent_threshold_minutes" value="{{ old('absent_threshold_minutes', $event->absent_threshold_minutes ?? 120) }}" min="0" step="1">
+                            <small class="form-text text-muted">Unscanned students after this time will be automatically marked as "Absent"</small>
+                        </div>
+                    </div>
+                </div>
+                @endif
+
                 <button type="submit" class="btn btn-primary">Update Event</button>
                 <a href="{{ route('admin.events.index') }}" class="btn btn-outline-secondary">Cancel</a>
             </form>

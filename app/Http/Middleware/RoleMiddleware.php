@@ -8,7 +8,6 @@ use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use App\Models\Staff;
-use App\Models\StaffProfile;
 
 class RoleMiddleware
 {
@@ -37,12 +36,12 @@ class RoleMiddleware
         }
 
         // If the current user IS staff (role 2), ensure they have a staff record.
-        // Accept either a legacy Staff row (matched by email) OR a StaffProfile linked to the user.
+        // Accept either a legacy Staff row (matched by email) OR a Staff record linked to the user.
         // Note: Do NOT force this check for admins (role 4) even if '2' is included in allowed roles.
         if ($userRole === '2') {
-            $staff = Staff::where('email', $request->user()->email)->first();
+            $staff = Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($request->user()->email))])->first();
             $hasLegacyStaff = (bool) $staff;
-            $hasProfile = StaffProfile::where('user_id', $request->user()->id)->exists();
+            $hasProfile = Staff::where('user_id', $request->user()->id)->exists();
             if (! ($hasLegacyStaff || $hasProfile)) {
                 \Log::info('RoleMiddleware: Staff record not found', ['user_id'=>$request->user()->id,'email'=>$request->user()->email]);
                 return redirect('/login')->with('error', 'Unauthorized access: staff record not found.');

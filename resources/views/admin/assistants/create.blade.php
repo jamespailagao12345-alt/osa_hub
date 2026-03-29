@@ -21,7 +21,7 @@
           @if (session('success'))
             <div class="alert alert-success">{{ session('success') }}</div>
           @endif
-          <form method="POST" action="{{ route('admin.assistants.store') }}">
+          <form method="POST" action="{{ route('admin.student-leaders.store') }}">
             @csrf
             <div class="mb-3">
               <label for="user_id" class="form-label">Student ID</label>
@@ -32,8 +32,8 @@
               <input type="text" class="form-control" id="first_name" name="first_name" value="{{ old('first_name') }}" required>
             </div>
             <div class="mb-3">
-              <label for="middle_name" class="form-label">Middle Name</label>
-              <input type="text" class="form-control" id="middle_name" name="middle_name" value="{{ old('middle_name') }}">
+              <label for="middle_name" class="form-label">Middle Initial</label>
+              <input type="text" class="form-control" id="middle_name" name="middle_name" value="{{ old('middle_name') }}" maxlength="1" pattern="[A-Za-z]" title="Enter only one alphabet character">
             </div>
             <div class="mb-3">
               <label for="last_name" class="form-label">Last Name</label>
@@ -78,11 +78,16 @@
             </div>
             <div class="mb-3">
               <label for="password" class="form-label">Password</label>
-              <input type="password" class="form-control" id="password" name="password" minlength="8" required>
+              <div class="position-relative">
+                <input type="password" class="form-control" id="password" name="password" minlength="8" required style="padding-right: 2.5rem;">
+                <button type="button" class="btn btn-link position-absolute p-0" id="togglePassword" style="border: none; background: none; cursor: pointer; z-index: 10; right: 0.75rem; top: 50%; transform: translateY(-50%); height: auto; line-height: 1;">
+                  <i class="bi bi-eye" id="passwordIcon" style="font-size: 0.875rem; vertical-align: middle; color: #6c757d;"></i>
+                </button>
+              </div>
             </div>
             <div class="d-flex gap-2">
               <button type="submit" class="btn btn-success" id="submit-btn">Add Assistant</button>
-              <a href="{{ route('admin.assistants.index') }}" class="btn btn-secondary">View All Assistants</a>
+              <a href="{{ route('admin.student-leaders.index') }}" class="btn btn-secondary">View All Assistants</a>
             </div>
           </form>
         </div>

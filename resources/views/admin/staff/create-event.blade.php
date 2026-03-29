@@ -33,7 +33,7 @@
                         <div class="card-body">
                           <div class="row">
                             <div class="col-md-8">
-                              <form action="{{ route('admin.staff.dashboard.StudentOrgModerator.event.store') }}" method="POST">
+                              <form action="{{ route('admin.staff.dashboard.StudentOrgModerator.event.store') }}" method="POST" enctype="multipart/form-data">
                                 @csrf
                                 <table class="table table-borderless">
                                   <tr>
@@ -75,6 +75,14 @@
                                     <td><label for="description">Description</label></td>
                                     <td><textarea name="description" id="description" class="form-control" rows="3"></textarea></td>
                                   </tr>
+                                  <tr>
+                                    <td><label for="event_files">Event Files (Optional)</label></td>
+                                    <td>
+                                      <input type="file" name="event_files[]" id="event_files" class="form-control" multiple accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.xlsx,.xls,.csv,.txt">
+                                      <small class="form-text text-muted">You can upload multiple files. Accepted formats: PDF, DOC, DOCX, JPG, JPEG, PNG, XLSX, XLS, CSV, TXT (Max 10MB per file). These files will be visible to Admin and OSA Staff.</small>
+                                      <div id="file-list" class="mt-2"></div>
+                                    </td>
+                                  </tr>
                                 </table>
                                 <button type="submit" class="btn" style="background: #ffe600; color: #222; min-width: 100px;">Create Event</button>
                               </form>
@@ -93,3 +101,70 @@
               </div>
             </main>
           </div>
+
+@push('scripts')
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const fileInput = document.getElementById('event_files');
+    const fileList = document.getElementById('file-list');
+    
+    if (fileInput && fileList) {
+        fileInput.addEventListener('change', function(e) {
+            const files = e.target.files;
+            fileList.innerHTML = '';
+            
+            if (files.length > 0) {
+                const list = document.createElement('ul');
+                list.className = 'list-group list-group-flush';
+                
+                for (let i = 0; i < files.length; i++) {
+                    const file = files[i];
+                    const listItem = document.createElement('li');
+                    listItem.className = 'list-group-item d-flex justify-content-between align-items-center';
+                    
+                    const fileInfo = document.createElement('span');
+                    fileInfo.textContent = file.name + ' (' + formatFileSize(file.size) + ')';
+                    
+                    const removeBtn = document.createElement('button');
+                    removeBtn.type = 'button';
+                    removeBtn.className = 'btn btn-sm btn-danger';
+                    removeBtn.textContent = 'Remove';
+                    removeBtn.onclick = function() {
+                        removeFileFromInput(i);
+                    };
+                    
+                    listItem.appendChild(fileInfo);
+                    listItem.appendChild(removeBtn);
+                    list.appendChild(listItem);
+                }
+                
+                fileList.appendChild(list);
+            }
+        });
+    }
+    
+    function formatFileSize(bytes) {
+        if (bytes === 0) return '0 Bytes';
+        const k = 1024;
+        const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+    }
+    
+    function removeFileFromInput(index) {
+        const dt = new DataTransfer();
+        const input = document.getElementById('event_files');
+        const files = input.files;
+        
+        for (let i = 0; i < files.length; i++) {
+            if (i !== index) {
+                dt.items.add(files[i]);
+            }
+        }
+        
+        input.files = dt.files;
+        input.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+@endpush

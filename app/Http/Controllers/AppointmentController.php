@@ -25,9 +25,17 @@ class AppointmentController extends Controller
             'changed_by' => auth()->id(),
             'meta' => null,
         ]);
-        // Send notification email
+        // Send notification email (queue it to avoid blocking)
         if (!empty($appointment->email)) {
-            Mail::to($appointment->email)->send(new \App\Mail\AppointmentApprovedMail($appointment));
+            try {
+                \Illuminate\Support\Facades\Mail::to($appointment->email)->queue(new \App\Mail\AppointmentApprovedMail($appointment));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to queue appointment approved email', [
+                    'appointment_id' => $appointment->id,
+                    'email' => $appointment->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
         return redirect()->back()->with('success', 'Appointment approved and user notified.');
     }
@@ -47,9 +55,17 @@ class AppointmentController extends Controller
             'changed_by' => auth()->id(),
             'meta' => null,
         ]);
-        // Send notification email
+        // Send notification email (queue it to avoid blocking)
         if (!empty($appointment->email)) {
-            Mail::to($appointment->email)->send(new \App\Mail\AppointmentDeclinedMail($appointment));
+            try {
+                \Illuminate\Support\Facades\Mail::to($appointment->email)->queue(new \App\Mail\AppointmentDeclinedMail($appointment));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Failed to queue appointment declined email', [
+                    'appointment_id' => $appointment->id,
+                    'email' => $appointment->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
         return redirect()->back()->with('success', 'Appointment declined and user notified.');
     }
@@ -154,10 +170,10 @@ class AppointmentController extends Controller
     }
     public function store(Request $request)
     {
-        // Validate input
+        // Validate input - check for Guidance Counselor (handle both American and British spellings)
         $isGuidanceCounselor = $request->concern && (
             stripos($request->concern, 'Guidance') !== false && 
-            stripos($request->concern, 'Counsellor') !== false
+            (stripos($request->concern, 'Counselor') !== false || stripos($request->concern, 'Counsellor') !== false)
         );
         
         $validator = Validator::make($request->all(), [
@@ -228,9 +244,18 @@ class AppointmentController extends Controller
             'status' => 'pending',
         ]);
 
-        // Send notification email to sender
+        // Send notification email to sender (queue it to avoid blocking)
         if (!empty($appointment->email)) {
-            Mail::to($appointment->email)->send(new \App\Mail\AppointmentSubmittedMail($appointment));
+            try {
+                \Illuminate\Support\Facades\Mail::to($appointment->email)->queue(new \App\Mail\AppointmentSubmittedMail($appointment));
+            } catch (\Throwable $e) {
+                // Log error but don't fail the request if email fails
+                \Illuminate\Support\Facades\Log::error('Failed to queue appointment submitted email', [
+                    'appointment_id' => $appointment->id,
+                    'email' => $appointment->email,
+                    'error' => $e->getMessage(),
+                ]);
+            }
         }
 
         if (auth()->check()) {

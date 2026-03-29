@@ -39,31 +39,104 @@
     </div>
 @endif
 <div class="container-fluid">
-  <div class="row mb-3">
+  <div class="row">
     <div class="col-12">
-      <a href="{{ route('admin.staff.dashboard.designation', ['designation' => 'Admission Services Officer']) }}" class="btn btn-secondary">&larr; Back</a>
+      <div class="admin-back-btn-wrap">
+        <a href="{{ route('admin.staff.dashboard.designation', ['designation' => 'Admission Services Officer']) }}" class="btn btn-secondary">&larr; Back</a>
+      </div>
     </div>
   </div>
   <div class="row">
     <div class="col-md-3 col-lg-2">
+      @php
+        $currentUser = auth()->user();
+        $isStaff = (auth()->user()->role ?? 0) == 2;
+        $isAdmin = (auth()->user()->role ?? 0) == 4;
+        $designationName = 'Admission Services Officer';
+        
+        // Get staff profile information
+        $staff = null;
+        $staffImage = null;
+        $staffName = '';
+        $staffDesignation = '';
+        
+        if ($currentUser) {
+          // Try to get staff from Staff table by email
+          $staff = \App\Models\Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($currentUser->email))])->first();
+          
+          if ($staff) {
+            $profileImage = $staff->image ?? $currentUser->image ?? null;
+            $staffName = trim(($staff->first_name ?? '') . ' ' . ($staff->last_name ?? ''));
+            $staffDesignation = $staff->designation ?? '';
+          } else {
+            // Fallback to user data
+            $profileImage = $currentUser->image ?? null;
+            $staffName = trim(($currentUser->first_name ?? '') . ' ' . ($currentUser->last_name ?? ''));
+            $staffDesignation = $currentUser->designation ?? optional($currentUser->staffProfile)->designation ?? '';
+          }
+          
+          // Normalize image path and generate URL (similar to staff dashboard)
+          if ($profileImage) {
+            $imagePath = $profileImage;
+            $imagePath = ltrim($imagePath, '/');
+            // Normalize image path - try multiple possible locations
+            $possiblePaths = [
+              $imagePath, // Original path
+              'staff-image/' . basename($imagePath),
+              'profile_images/' . basename($imagePath),
+            ];
+            
+            $foundPath = null;
+            foreach ($possiblePaths as $path) {
+              if (\Illuminate\Support\Facades\Storage::disk('public')->exists($path)) {
+                $foundPath = $path;
+                break;
+              }
+            }
+            
+            // Generate URL - use found path or original as fallback
+            if ($foundPath) {
+              $staffImage = \Illuminate\Support\Facades\Storage::disk('public')->url($foundPath);
+            } else {
+              // Fallback: generate URL from original path (might work if symlinked)
+              $staffImage = \Illuminate\Support\Facades\Storage::disk('public')->url($imagePath);
+            }
+          } else {
+            $staffImage = null;
+          }
+        }
+      @endphp
+      
+      <!-- Staff Profile Card -->
+      <div class="card mb-3" style="border: 1px solid #ddd;">
+        <div class="card-body text-center p-3">
+          @if($staffImage)
+            <img src="{{ $staffImage }}" alt="{{ $staffName }}" class="img-fluid rounded-circle mb-2" style="width: 100px; height: 100px; object-fit: cover; border: 3px solid midnightblue;">
+          @else
+            <div class="rounded-circle bg-secondary d-inline-flex align-items-center justify-content-center mb-2" style="width: 100px; height: 100px; border: 3px solid midnightblue;">
+              <span class="text-white" style="font-size: 2rem; font-weight: bold;">
+                {{ strtoupper(substr($staffName, 0, 1)) }}{{ strtoupper(substr($staffName, strrpos($staffName, ' ') + 1, 1)) }}
+              </span>
+            </div>
+          @endif
+          <h6 class="mb-1" style="font-weight: bold; color: midnightblue;">{{ $staffName }}</h6>
+          <p class="mb-0 text-muted" style="font-size: 0.85rem;">{{ $staffDesignation ?: 'Staff' }}</p>
+        </div>
+      </div>
+      
       <div class="list-group mb-3">
         <div class="list-group-item active" style="background-color: midnightblue; border-color: midnightblue;">Quick Actions</div>
         <a href="{{ route('admin.appointments.index') }}" class="list-group-item list-group-item-action">Assigned Appointments</a>
-        @php
-          $isStaff = (auth()->user()->role ?? 0) == 2;
-          $isAdmin = (auth()->user()->role ?? 0) == 4;
-          $designationName = 'Admission Services Officer';
-        @endphp
         @if($isStaff)
           <a href="{{ route('staff.organizations.index') }}" class="list-group-item list-group-item-action">My Organization</a>
         @endif
-        <a href="{{ route('admin.events.index') }}" class="list-group-item list-group-item-action">All Events</a>
         @if($isAdmin)
           <a href="{{ route('admin.events.index') }}#create" class="list-group-item list-group-item-action">Create Event</a>
         @endif
-        <a href="{{ route('admin.participants.export') }}" class="list-group-item list-group-item-action">Participants History</a>
-        <a href="{{ route('admin.staff.dashboard.report', ['designation' => $designationName]) }}" class="list-group-item list-group-item-action">Reports</a>
         <a href="{{ route('admin.staff.dashboard.AdmissionServicesOfficer.student-management') }}" class="list-group-item list-group-item-action">Student Management</a>
+        <a href="{{ route('admin.qrscan') }}" class="list-group-item list-group-item-action">
+          <i class="bi bi-qr-code-scan"></i> Scan QR Code
+        </a>
       </div>
     </div>
     <main class="col-md-9 col-lg-10">
@@ -295,8 +368,8 @@
                 <input type="text" name="first_name" class="form-control" value="{{ old('first_name') }}" required>
               </div>
               <div class="form-field">
-                <label>Middle Name:</label>
-                <input type="text" name="middle_name" class="form-control" value="{{ old('middle_name') }}">
+                <label>Middle Initial:</label>
+                <input type="text" name="middle_name" class="form-control" value="{{ old('middle_name') }}" maxlength="1" pattern="[A-Za-z]" title="Enter only one alphabet character">
               </div>
               <div class="form-field">
                 <label>Ext. Name:</label>
@@ -310,24 +383,30 @@
             <div class="section-label">B. HOME ADDRESS</div>
             <div class="section-row">
               <div class="form-field">
-                <label>Street:</label>
-                <input type="text" name="street" class="form-control" value="{{ old('street') }}">
-              </div>
-              <div class="form-field">
-                <label>Barangay:</label>
-                <input type="text" name="barangay" class="form-control" value="{{ old('barangay') }}">
+                <label>Province:</label>
+                <select name="province" id="province-select" class="form-control" required>
+                  <option value="">Select Province</option>
+                </select>
               </div>
               <div class="form-field">
                 <label>City/Municipality:</label>
-                <input type="text" name="city_municipality" class="form-control" value="{{ old('city_municipality') }}">
+                <select name="city_municipality" id="city-select" class="form-control" required disabled>
+                  <option value="">Select City/Municipality</option>
+                </select>
               </div>
               <div class="form-field">
-                <label>Province:</label>
-                <input type="text" name="province" class="form-control" value="{{ old('province') }}">
+                <label>Barangay:</label>
+                <select name="barangay" id="barangay-select" class="form-control" required disabled>
+                  <option value="">Select Barangay</option>
+                </select>
+              </div>
+              <div class="form-field form-field-full">
+                <label>Street/House No.:</label>
+                <input type="text" name="street" id="street-input" class="form-control" value="{{ old('street') }}" placeholder="Enter street name and house number">
               </div>
               <div class="form-field">
                 <label>Zip Code:</label>
-                <input type="text" name="zip_code" class="form-control" value="{{ old('zip_code') }}">
+                <input type="text" name="zip_code" id="zip-code-input" class="form-control" value="{{ old('zip_code') }}" readonly>
               </div>
             </div>
           </div>
@@ -354,7 +433,6 @@
                   <option value="">Select</option>
                   <option value="male" {{ old('gender') == 'male' ? 'selected' : '' }}>Male</option>
                   <option value="female" {{ old('gender') == 'female' ? 'selected' : '' }}>Female</option>
-                  <option value="other" {{ old('gender') == 'other' ? 'selected' : '' }}>Other</option>
                 </select>
               </div>
               <div class="form-field">
@@ -369,7 +447,16 @@
               </div>
               <div class="form-field">
                 <label>Nationality:</label>
-                <input type="text" name="nationality" class="form-control" value="{{ old('nationality') }}">
+                <select name="nationality_id" class="form-control" id="nationality-select">
+                  <option value="">Select Nationality</option>
+                  @foreach($nationalities ?? [] as $nationality)
+                    <option value="{{ $nationality->id }}" {{ old('nationality_id') == $nationality->id ? 'selected' : '' }}>
+                      {{ $nationality->name }}
+                    </option>
+                  @endforeach
+                </select>
+                <small class="text-muted">Or enter a new nationality:</small>
+                <input type="text" name="nationality" class="form-control mt-1" value="{{ old('nationality') }}" placeholder="Enter new nationality (optional)" id="nationality-input">
               </div>
             </div>
           </div>
@@ -629,12 +716,16 @@
                 <small class="text-muted d-block">(Only those with an official PWD ID are considered for this category.)</small>
                 <div style="display: flex; gap: 15px; margin-top: 5px;">
                   <label style="font-weight: normal;">
-                    <input type="radio" name="is_pwd" value="1" {{ old('is_pwd') == '1' ? 'checked' : '' }}> Yes
+                    <input type="radio" name="is_pwd" id="is_pwd_yes" value="1" {{ old('is_pwd') == '1' ? 'checked' : '' }}> Yes
                   </label>
                   <label style="font-weight: normal;">
-                    <input type="radio" name="is_pwd" value="0" {{ old('is_pwd') == '0' || old('is_pwd') == null ? 'checked' : '' }}> No
+                    <input type="radio" name="is_pwd" id="is_pwd_no" value="0" {{ old('is_pwd') == '0' || old('is_pwd') == null ? 'checked' : '' }}> No
                   </label>
                 </div>
+              </div>
+              <div class="form-field" id="disability_specify_field" style="display: none;">
+                <label>If answer is YES, please specify your disability:</label>
+                <input type="text" name="disability_type" id="disability_type" class="form-control" value="{{ old('disability_type') }}" placeholder="Specify your disability">
               </div>
               <div class="form-field">
                 <label>If you are a PWD, kindly upload your valid ID here:</label>
@@ -1203,7 +1294,7 @@
     const civilStatusSelect = document.querySelector('select[name="civil_status"]');
     const genderSelect = document.querySelector('select[name="gender"]');
     
-    // Show/hide Section B based on Civil Status and Gender
+    // Show/hide Section B based on Civil Status and Sex
     function toggleSectionB() {
       const sectionB = document.getElementById('section-b');
       const maidenNameInput = document.querySelector('input[name="maiden_name"]');
@@ -1212,7 +1303,7 @@
         const gender = genderSelect.value;
         const civilStatus = civilStatusSelect.value;
         
-        // Hide Section B if gender is "male" OR civil status is "single"
+        // Hide Section B if sex is "male" OR civil status is "single"
         if (gender === 'male' || civilStatus === 'single') {
           sectionB.style.display = 'none';
           if (maidenNameInput) {
@@ -1224,7 +1315,7 @@
       }
     }
     
-    // Listen for changes in Gender and Civil Status
+    // Listen for changes in Sex and Civil Status
     if (genderSelect) {
       genderSelect.addEventListener('change', toggleSectionB);
     }
@@ -1234,6 +1325,26 @@
     
     // Initial check on page load
     toggleSectionB();
+    
+    // Handle nationality dropdown/input interaction
+    const nationalitySelect = document.getElementById('nationality-select');
+    const nationalityInput = document.getElementById('nationality-input');
+    
+    if (nationalitySelect && nationalityInput) {
+      // When dropdown is selected, clear input
+      nationalitySelect.addEventListener('change', function() {
+        if (this.value) {
+          nationalityInput.value = '';
+        }
+      });
+      
+      // When input is typed, clear dropdown selection
+      nationalityInput.addEventListener('input', function() {
+        if (this.value) {
+          nationalitySelect.value = '';
+        }
+      });
+    }
     
     // Toggle Scholarship dropdown based on Student Type 2
     const studentType2Select = document.getElementById('student-type2-select');
@@ -1315,6 +1426,374 @@
     if (livingArrangement) {
       livingArrangement.addEventListener('change', toggleLivingArrangementOthers);
       toggleLivingArrangementOthers();
+    }
+
+    // Address cascading dropdowns functionality
+    // Get elements - ensure they exist before using
+    const provinceSelect = document.getElementById('province-select');
+    const citySelect = document.getElementById('city-select');
+    const barangaySelect = document.getElementById('barangay-select');
+    const zipCodeInput = document.getElementById('zip-code-input');
+    // baseUrl is already declared above (line 1031), so we reuse it
+
+    // Load provinces on page load - fetches from database via API
+    async function loadProvinces() {
+      // Re-check element exists (in case DOM wasn't ready)
+      const provinceDropdown = document.getElementById('province-select');
+      if (!provinceDropdown) {
+        console.error('Province dropdown element not found');
+        return;
+      }
+      
+      try {
+        const apiUrl = `${baseUrl}/api/provinces`;
+        console.log('Loading provinces from:', apiUrl);
+        
+        const response = await fetch(apiUrl, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-cache'
+        });
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const provinces = await response.json();
+        console.log('Provinces received from API:', provinces);
+        
+        // Clear and populate province dropdown
+        provinceDropdown.innerHTML = '<option value="">Select Province</option>';
+        
+        if (provinces && Array.isArray(provinces) && provinces.length > 0) {
+          provinces.forEach(province => {
+            const option = document.createElement('option');
+            option.value = province.code || province.id;
+            option.textContent = province.name || province.code;
+            
+            // Preserve old value if it matches
+            const oldProvince = "{{ old('province', '') }}";
+            if (oldProvince && (oldProvince === province.code || oldProvince === province.id)) {
+              option.selected = true;
+            }
+            
+            provinceDropdown.appendChild(option);
+          });
+          console.log(`Successfully loaded ${provinces.length} provinces into dropdown`);
+        } else {
+          provinceDropdown.innerHTML = '<option value="">No provinces available. Please add provinces in Address Management.</option>';
+          console.warn('No provinces found in database or invalid response format');
+        }
+      } catch (error) {
+        console.error('Error loading provinces from database:', error);
+        const provinceDropdown = document.getElementById('province-select');
+        if (provinceDropdown) {
+          provinceDropdown.innerHTML = '<option value="">Error loading provinces. Please check your connection and try refreshing the page.</option>';
+        }
+      }
+    }
+
+    // Load cities based on selected province - fetches from database via API
+    async function loadCities(provinceCode) {
+      if (!citySelect) return;
+      
+      citySelect.disabled = true;
+      citySelect.innerHTML = '<option value="">Loading cities...</option>';
+      barangaySelect.disabled = true;
+      barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+      zipCodeInput.value = '';
+      
+      if (!provinceCode) {
+        citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
+        citySelect.disabled = true;
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${baseUrl}/api/cities?province=${encodeURIComponent(provinceCode)}`);
+        if (!response.ok) throw new Error('Failed to load cities');
+        
+        const cities = await response.json();
+        
+        // Clear and populate city dropdown
+        citySelect.innerHTML = '<option value="">Select City/Municipality</option>';
+        
+        if (cities && cities.length > 0) {
+          cities.forEach(city => {
+            const option = document.createElement('option');
+            option.value = city.name;
+            option.textContent = city.name;
+            option.setAttribute('data-zip-code', city.zip_code || '');
+            
+            // Preserve old value if it matches
+            const oldCity = "{{ old('city_municipality', '') }}";
+            if (oldCity && oldCity === city.name) {
+              option.selected = true;
+              zipCodeInput.value = city.zip_code || '';
+            }
+            
+            citySelect.appendChild(option);
+          });
+        } else {
+          citySelect.innerHTML = '<option value="">No cities available for this province. Please add cities in Address Management.</option>';
+        }
+        
+        citySelect.disabled = false;
+        
+        // If old city was selected, load barangays
+        if (citySelect.value) {
+          loadBarangays(citySelect.value, provinceCode);
+        }
+      } catch (error) {
+        console.error('Error loading cities from database:', error);
+        citySelect.innerHTML = '<option value="">Error loading cities. Please check your connection.</option>';
+        citySelect.disabled = false;
+      }
+    }
+
+    // Load barangays based on selected city - fetches from database via API
+    async function loadBarangays(cityName, provinceCode) {
+      if (!barangaySelect) return;
+      
+      barangaySelect.disabled = true;
+      barangaySelect.innerHTML = '<option value="">Loading barangays...</option>';
+      
+      if (!cityName) {
+        barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+        barangaySelect.disabled = true;
+        return;
+      }
+      
+      try {
+        const response = await fetch(`${baseUrl}/api/barangays?city=${encodeURIComponent(cityName)}&province=${encodeURIComponent(provinceCode)}`);
+        if (!response.ok) throw new Error('Failed to load barangays');
+        
+        const barangays = await response.json();
+        
+        // Clear and populate barangay dropdown
+        barangaySelect.innerHTML = '<option value="">Select Barangay</option>';
+        
+        if (barangays && barangays.length > 0) {
+          barangays.forEach(barangay => {
+            const option = document.createElement('option');
+            option.value = barangay.name;
+            option.textContent = barangay.name;
+            
+            // Preserve old value if it matches
+            const oldBarangay = "{{ old('barangay', '') }}";
+            if (oldBarangay && oldBarangay === barangay.name) {
+              option.selected = true;
+            }
+            
+            barangaySelect.appendChild(option);
+          });
+        } else {
+          barangaySelect.innerHTML = '<option value="">No barangays available for this city. Please add barangays in Address Management.</option>';
+        }
+        
+        barangaySelect.disabled = false;
+      } catch (error) {
+        console.error('Error loading barangays from database:', error);
+        barangaySelect.innerHTML = '<option value="">Error loading barangays. Please check your connection.</option>';
+        barangaySelect.disabled = false;
+      }
+    }
+
+    // Handle province change
+    if (provinceSelect) {
+      provinceSelect.addEventListener('change', function() {
+        const provinceCode = this.value;
+        loadCities(provinceCode);
+      });
+    }
+
+    // Handle city change - auto-fills zip code from database
+    if (citySelect) {
+      citySelect.addEventListener('change', function() {
+        const cityName = this.value;
+        const provinceCode = provinceSelect ? provinceSelect.value : '';
+        
+        // Auto-fill zip code from selected city option (fetched from database)
+        const selectedOption = this.options[this.selectedIndex];
+        const zipCode = selectedOption ? selectedOption.getAttribute('data-zip-code') : '';
+        
+        if (zipCode && zipCode.trim() !== '') {
+          zipCodeInput.value = zipCode;
+        } else {
+          // Fallback: fetch zip code from API if not in data attribute
+          if (cityName && provinceCode) {
+            fetch(`${baseUrl}/api/zip-code?city=${encodeURIComponent(cityName)}&province=${encodeURIComponent(provinceCode)}`)
+              .then(response => response.json())
+              .then(data => {
+                if (data.zip_code) {
+                  zipCodeInput.value = data.zip_code;
+                }
+              })
+              .catch(error => {
+                console.error('Error fetching zip code:', error);
+              });
+          } else {
+            zipCodeInput.value = '';
+          }
+        }
+        
+        // Load barangays from database
+        loadBarangays(cityName, provinceCode);
+      });
+    }
+
+    // Initialize provinces dropdown on page load - fetches from provinces table
+    // This ensures provinces from the database are loaded into the dropdown
+    // Use setTimeout to ensure DOM is fully ready
+    setTimeout(function() {
+      const provinceDropdown = document.getElementById('province-select');
+      if (provinceDropdown) {
+        console.log('Initializing province dropdown...');
+        loadProvinces();
+      } else {
+        console.error('Province dropdown element not found on page load');
+        // Retry after a short delay
+        setTimeout(function() {
+          const retryDropdown = document.getElementById('province-select');
+          if (retryDropdown) {
+            console.log('Retrying province dropdown initialization...');
+            loadProvinces();
+          }
+        }, 500);
+      }
+    }, 100);
+    
+    // Function to restore address from old values or addresses table
+    async function restoreAddress() {
+      const oldProvince = "{{ old('province', '') }}";
+      const oldCity = "{{ old('city_municipality', '') }}";
+      const oldBarangay = "{{ old('barangay', '') }}";
+      const oldZipCode = "{{ old('zip_code', '') }}";
+      const oldStreet = "{{ old('street', '') }}";
+      
+      // Restore street if exists
+      if (oldStreet && document.getElementById('street-input')) {
+        document.getElementById('street-input').value = oldStreet;
+      }
+      
+      if (!oldProvince || !provinceSelect) {
+        if (oldZipCode && zipCodeInput) {
+          zipCodeInput.value = oldZipCode;
+        }
+        return;
+      }
+      
+      // Wait for provinces to load
+      await new Promise(resolve => setTimeout(resolve, 500));
+      
+      // Try to find matching province by code or name (for addresses table compatibility)
+      const provinceOptions = Array.from(provinceSelect.options);
+      let matchedProvince = null;
+      let matchedProvinceCode = null;
+      
+      for (const option of provinceOptions) {
+        // Match by code (if oldProvince is a code)
+        if (option.value === oldProvince) {
+          matchedProvince = option.value;
+          matchedProvinceCode = option.value;
+          break;
+        }
+        // Match by name (if oldProvince is a name from addresses table)
+        if (option.textContent.toLowerCase().trim() === oldProvince.toLowerCase().trim()) {
+          matchedProvince = option.value;
+          matchedProvinceCode = option.value;
+          break;
+        }
+      }
+      
+      if (matchedProvince && matchedProvinceCode) {
+        provinceSelect.value = matchedProvince;
+        await loadCities(matchedProvinceCode);
+        
+        // After cities load, try to match city
+        if (oldCity && citySelect) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+          
+          const cityOptions = Array.from(citySelect.options);
+          let matchedCity = null;
+          
+          for (const option of cityOptions) {
+            // Match by exact name or case-insensitive
+            if (option.value === oldCity || option.textContent.toLowerCase().trim() === oldCity.toLowerCase().trim()) {
+              matchedCity = option.value;
+              citySelect.value = option.value;
+              
+              // Set zip code
+              const zipCode = option.getAttribute('data-zip-code');
+              if (zipCode) {
+                zipCodeInput.value = zipCode;
+              } else if (oldZipCode) {
+                zipCodeInput.value = oldZipCode;
+              }
+              
+              // Load barangays
+              await loadBarangays(option.value, matchedProvinceCode);
+              
+              // After barangays load, try to match barangay
+              if (oldBarangay && barangaySelect) {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                const barangayOptions = Array.from(barangaySelect.options);
+                for (const brgyOption of barangayOptions) {
+                  // Match by exact name or case-insensitive
+                  if (brgyOption.value === oldBarangay || brgyOption.textContent.toLowerCase().trim() === oldBarangay.toLowerCase().trim()) {
+                    barangaySelect.value = brgyOption.value;
+                    break;
+                  }
+                }
+              }
+              break;
+            }
+          }
+        } else if (oldZipCode && zipCodeInput) {
+          zipCodeInput.value = oldZipCode;
+        }
+      } else if (oldZipCode && zipCodeInput) {
+        zipCodeInput.value = oldZipCode;
+      }
+    }
+    
+    // Restore address on page load
+    restoreAddress();
+    
+    // Handle PWD disability field visibility
+    const isPwdYes = document.getElementById('is_pwd_yes');
+    const isPwdNo = document.getElementById('is_pwd_no');
+    const disabilityField = document.getElementById('disability_specify_field');
+    
+    function toggleDisabilityField() {
+      if (isPwdYes && isPwdYes.checked) {
+        if (disabilityField) {
+          disabilityField.style.display = 'block';
+        }
+      } else {
+        if (disabilityField) {
+          disabilityField.style.display = 'none';
+          const disabilityInput = document.getElementById('disability_type');
+          if (disabilityInput) {
+            disabilityInput.value = '';
+          }
+        }
+      }
+    }
+    
+    // Set initial state
+    toggleDisabilityField();
+    
+    // Add event listeners
+    if (isPwdYes) {
+      isPwdYes.addEventListener('change', toggleDisabilityField);
+    }
+    if (isPwdNo) {
+      isPwdNo.addEventListener('change', toggleDisabilityField);
     }
   });
 </script>

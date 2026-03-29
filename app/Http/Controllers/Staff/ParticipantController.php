@@ -24,10 +24,29 @@ class ParticipantController extends Controller
             $query->whereHas('user', fn($q) => $q->where('course_id', $request->course_id));
         }
         if ($request->filled('year_level')) {
-            $query->whereHas('user', fn($q) => $q->where('year_level', $request->year_level));
+            $query->whereHas('user.studentInformation', fn($q) => $q->where('year_level', $request->year_level));
         }
 
-        $participants = $query->latest()->paginate(20);
+        // Get all participants, sort alphabetically, then paginate
+        $allParticipants = $query->get()->sortBy(function($participant) {
+            $lastName = strtolower($participant->user->last_name ?? '');
+            $firstName = strtolower($participant->user->first_name ?? '');
+            return $lastName . ' ' . $firstName;
+        })->values();
+        
+        // Manually paginate the sorted collection
+        $perPage = 20;
+        $currentPage = $request->get('page', 1);
+        $total = $allParticipants->count();
+        $offset = ($currentPage - 1) * $perPage;
+        $paginatedItems = $allParticipants->slice($offset, $perPage)->values();
+        $participants = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedItems,
+            $total,
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
         $events = \App\Models\Event::where('created_by', auth()->id())->get();
         $departments = \App\Models\Department::all();
 
@@ -50,10 +69,14 @@ class ParticipantController extends Controller
             $query->whereHas('user', fn($q) => $q->where('course_id', $request->course_id));
         }
         if ($request->filled('year_level')) {
-            $query->whereHas('user', fn($q) => $q->where('year_level', $request->year_level));
+            $query->whereHas('user.studentInformation', fn($q) => $q->where('year_level', $request->year_level));
         }
 
-        $participants = $query->get();
+        $participants = $query->get()->sortBy(function($participant) {
+            $lastName = strtolower($participant->user->last_name ?? '');
+            $firstName = strtolower($participant->user->first_name ?? '');
+            return $lastName . ' ' . $firstName;
+        })->values();
 
         // Only admin can export
         if (auth()->user()->role !== 4) {
@@ -77,7 +100,7 @@ class ParticipantController extends Controller
             $query->whereHas('user', fn($q) => $q->where('course_id', $request->course_id));
         }
         if ($request->filled('year_level')) {
-            $query->whereHas('user', fn($q) => $q->where('year_level', $request->year_level));
+            $query->whereHas('user.studentInformation', fn($q) => $q->where('year_level', $request->year_level));
         }
         $participants = $query->latest()->paginate(20);
         $events = \App\Models\Event::where('created_by', auth()->id())->get();

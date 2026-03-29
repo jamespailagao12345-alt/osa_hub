@@ -7,7 +7,7 @@
     <main class="col-md-10 py-4">
         <div class="admin-back-btn-wrap">
             @if(request()->has('return_to'))
-              <a href="{{ urldecode(request('return_to')) }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Dashboard</a>
+              <a href="{{ urldecode(request('return_to')) }}" class="btn btn-secondary rounded-pill px-3">&lt; Back</a>
             @else
               <a href="{{ route('admin.events.index') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Events</a>
             @endif
@@ -94,7 +94,7 @@
                                 @endif
                             </td>
                             <td>{{ $event->location ?? 'N/A' }}</td>
-                            <td>{{ $event->organization->name ?? 'N/A' }}</td>
+                            <td>{{ $event->organization->name ?? ($event->coordinator_name ?? 'N/A') }}</td>
                             <td>
                                 <a href="{{ route('admin.events.show', $event->id) }}" class="btn btn-sm btn-primary">View Details</a>
                             </td>
@@ -115,6 +115,73 @@
             
             <div class="mt-4">
                 {{ $events->links() }}
+            </div>
+            
+            <!-- Admin Created Events Section -->
+            <div class="mt-5">
+                <h3 class="h6 mb-3">
+                    <span class="badge bg-primary me-2">Admin Created</span>
+                    Admin Created Events
+                    <span class="badge bg-secondary">{{ $adminEvents->total() ?? 0 }}</span>
+                </h3>
+                <p class="text-muted small mb-3">Recent events created by administrators</p>
+                
+                <div class="bg-white shadow rounded-lg overflow-x-auto">
+                    <table class="table table-striped table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Event Name</th>
+                                <th>Description</th>
+                                <th>Start Time</th>
+                                <th>End Time</th>
+                                <th>Location</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @forelse ($adminEvents ?? [] as $event)
+                            <tr>
+                                <td><strong>{{ $event->name }}</strong></td>
+                                <td>{{ $event->description ?? 'N/A' }}</td>
+                                <td>
+                                    @if($event->start_time)
+                                        {{ \Carbon\Carbon::parse($event->start_time)->format('M d, Y h:i A') }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </td>
+                                <td>
+                                    @if($event->end_time)
+                                        {{ \Carbon\Carbon::parse($event->end_time)->format('M d, Y h:i A') }}
+                                    @else
+                                        N/A
+                                    @endif
+                                </td>
+                                <td>{{ $event->location ?? 'N/A' }}</td>
+                                <td>
+                                    <a href="{{ route('admin.events.edit', $event->id) }}" class="btn btn-sm btn-warning me-1">Edit</a>
+                                    <a href="{{ route('admin.events.show', $event->id) }}" class="btn btn-sm btn-primary">View Details</a>
+                                </td>
+                            </tr>
+                            @empty
+                            <tr>
+                                <td colspan="6" class="text-center py-4">
+                                    <div class="text-muted">
+                                        <i class="bi bi-info-circle me-2"></i>
+                                        No admin-created recent events found.
+                                    </div>
+                                </td>
+                            </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
+                </div>
+                
+                @if(isset($adminEvents) && $adminEvents->hasPages())
+                <div class="mt-3">
+                    {{ $adminEvents->links() }}
+                </div>
+                @endif
             </div>
         </div>
         </main>

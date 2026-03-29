@@ -1,11 +1,13 @@
 @extends('layouts.app')
 
 @php
-  $designation = trim((auth()->user()?->designation ?? auth()->user()?->staffProfile?->designation ?? ''));
-  $firstName = trim((auth()->user()?->first_name ?? ''));
+  $currentUser = auth()->user();
+  $designation = trim(($currentUser?->designation ?? $currentUser?->staffProfile?->designation ?? ''));
+  $firstName = trim(($currentUser?->first_name ?? ''));
   $pageTitle = ($designation !== '' && $firstName !== '')
     ? ($designation . ' — ' . $firstName)
     : ($designation . $firstName);
+  $shouldShowBackButton = (int)($currentUser?->role ?? 0) === 4;
 @endphp
 
 @section('title', $pageTitle)
@@ -15,9 +17,11 @@
   <div class="row">
     @include('admin.partials.sidebar')
     <main id="adminMain" class="col-md-10">
+      @if($shouldShowBackButton)
       <div class="admin-back-btn-wrap">
-        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Dashboard</a>
+        <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back</a>
       </div>
+      @endif
       @if(session('error'))
         <div class="alert alert-danger alert-dismissible fade show" role="alert">
           {{ session('error') }}
@@ -26,7 +30,7 @@
       @endif
       <style>
         /* Align Staff Dashboards header with global section header style */
-        .section-header { display:block; width:100%; box-sizing:border-box; background:#fff; color: midnightblue; padding:.5rem 1rem; border:none; border-bottom:1px solid midnightblue; border-radius:0; }
+        .section-header { display:block; width:100%; box-sizing:border-box; background-color: midnightblue; color: white; padding:.5rem 1rem; border:none; border-radius:0; }
         /* Subtle divider under section labels, slightly lower than text */
         .section-divider { position: relative; }
         .section-divider::after {
@@ -98,8 +102,7 @@
                   
                   if ($s->designation && ($isCurrentUser || $isCurrentUserStaffRecord || $isAdmin)) {
                     $isClickable = true;
-                    // Normalize "Safety Officer" to "EMT Coordinator" for routing
-                    $normalizedDesignation = str_replace('Safety Officer', 'EMT Coordinator', $s->designation);
+                    $normalizedDesignation = $s->designation;
                     $isStudentOrgModerator = strcasecmp($s->designation, 'Student Org. Moderator') === 0;
                     if ($isStudentOrgModerator) {
                       // If admin viewing another staff member, pass staff email to show their organizations
@@ -115,7 +118,7 @@
                   }
                 @endphp
                 @php
-                  $displayDesignation = str_replace('Safety Officer', 'EMT Coordinator', $s->designation ?? '');
+                  $displayDesignation = $s->designation ?? '';
                 @endphp
                 <tr align="left" class="{{ $isClickable ? 'staff-row-clickable' : '' }}" data-href="{{ $dashboardUrl }}" data-designation="{{ $displayDesignation }}" data-current-user="{{ $isCurrentUser ? '1' : '0' }}" style="{{ $isClickable ? 'cursor: pointer;' : '' }}">
                   <td align="center">
@@ -128,7 +131,30 @@
                   <td>{{ $s->first_name }} {{ $s->last_name }}</td>
                   <td>{{ $s->department->name ?? '-' }}</td>
                   <td>{{ $displayDesignation ?: '-' }}</td>
-                  <td>{{ $s->organization->name ?? '-' }}</td>
+                  <td>
+                    @php
+                      $allOrgs = collect();
+                      // Add single organization if exists
+                      if ($s->organization) {
+                        $allOrgs->push($s->organization->name);
+                      }
+                      // Add multiple organizations from pivot table
+                      if ($s->organizations && $s->organizations->isNotEmpty()) {
+                        foreach ($s->organizations as $org) {
+                          if (!$allOrgs->contains($org->name)) {
+                            $allOrgs->push($org->name);
+                          }
+                        }
+                      }
+                    @endphp
+                    @if($allOrgs->isNotEmpty())
+                      @foreach($allOrgs as $orgName)
+                        <div>{{ $orgName }}</div>
+                      @endforeach
+                    @else
+                      <span>-</span>
+                    @endif
+                  </td>
                 </tr>
                 @empty
                 <tr><td colspan="5" class="text-center text-muted">No staff</td></tr>

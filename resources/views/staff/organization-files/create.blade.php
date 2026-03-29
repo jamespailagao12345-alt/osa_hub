@@ -4,18 +4,17 @@
 
 @section('content')
 <div class="container-fluid">
-  <div class="row mb-3">
+  <div class="row">
     <div class="col-12">
-      <a href="{{ route('staff.organization-files.index', $organization->id) }}" class="btn btn-secondary">&larr; Back to Files</a>
+      <div class="admin-back-btn-wrap">
+        <a href="{{ route('staff.organization-files.index', $organization->id) }}" class="btn btn-secondary">&larr; Back to Files</a>
+      </div>
     </div>
   </div>
 
   <div class="row">
-    <div class="col-md-3 col-lg-2">
-      @include('staff.partials.sidebar')
-    </div>
-    
-    <main class="col-md-9 col-lg-10">
+    @include('staff.partials.sidebar')
+    <main id="staffMain" class="col-md-10">
       <div class="card">
         <div class="card-header" style="background-color: midnightblue; color: white;">
           <h4 class="mb-0">

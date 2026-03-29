@@ -6,6 +6,8 @@ use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Department;
 use App\Models\Scholarship;
+use App\Models\EmergencyContact;
+use App\Models\StudentInformation;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
@@ -32,7 +34,7 @@ class RegisterController extends Controller
     protected function validator(array $data)
     {
         return Validator::make($data, [
-            'user_id' => ['required', 'string', 'max:50', 'unique:users'],
+            'user_id' => ['required', 'string', 'unique:users', new \App\Rules\UserIdByRole(1)],
             'first_name' => ['required', 'string', 'max:50'],
             'last_name' => ['required', 'string', 'max:50'],
             'email' => ['required', 'string', 'email', 'max:100', 'unique:users'],
@@ -58,7 +60,8 @@ class RegisterController extends Controller
 
     protected function create(array $data)
     {
-        return User::create([
+        // Create user with only basic fields
+        $user = User::create([
             'user_id' => $data['user_id'],
             'first_name' => $data['first_name'],
             'middle_name' => $data['middle_name'] ?? null,
@@ -69,17 +72,30 @@ class RegisterController extends Controller
             'department_id' => $data['department_id'],
             'course_id' => $data['course_id'],
             'organization_id' => $data['organization_id'],
+            'contact_number' => $data['contact_number'],
+            'role' => 1, // student
+            'password' => Hash::make($data['password']),
+        ]);
+
+        // Save to normalized tables
+        // Emergency Contact
+        EmergencyContact::create([
+            'user_id' => $user->id,
+            'name' => $data['emergency_contact_name'],
+            'contact_number' => $data['emergency_contact_number'],
+            'relation' => $data['emergency_relation'],
+        ]);
+
+        // Student Information
+        StudentInformation::create([
+            'user_id' => $user->id,
             'year_level' => $data['year_level'],
             'student_type1' => $data['student_type1'],
             'student_type2' => $data['student_type2'],
             'scholarship_id' => ($data['student_type2'] === 'scholar') ? ($data['scholarship_id'] ?? null) : null,
-            'contact_number' => $data['contact_number'],
-            'emergency_contact_name' => $data['emergency_contact_name'],
-            'emergency_contact_number' => $data['emergency_contact_number'],
-            'emergency_relation' => $data['emergency_relation'],
-            'role' => 1, // student
-            'password' => Hash::make($data['password']),
         ]);
+
+        return $user;
     }
 
     // 👇 ADD THIS METHOD HERE 👇

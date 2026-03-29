@@ -75,7 +75,7 @@
                                 </tr>
                                 <tr>
                                     <th>Organization:</th>
-                                    <td>{{ $event->organization->name ?? 'N/A' }}</td>
+                                    <td>{{ $event->organization->name ?? ($event->coordinator_name ?? 'N/A') }}</td>
                                 </tr>
                                 <tr>
                                     <th>Location:</th>
@@ -126,6 +126,143 @@
                     </div>
                 </div>
             </div>
+
+            @if($event->required_student_participation && !$isDeclined)
+            <!-- Participation Monitoring Section -->
+            <div class="card mb-4">
+                <div class="card-header" style="background-color: #198754; color: white;">
+                    <h5 class="mb-0"><i class="bi bi-clock-history me-2"></i>Participation Monitoring</h5>
+                </div>
+                <div class="card-body">
+                    @php
+                        $user = auth()->user();
+                        $isAdmin = $user && (int) $user->role === 4;
+                        $isStaff = $user && (int) $user->role === 2;
+                        $canManage = $isAdmin || ($event->created_by === $user->id) || ($isStaff && $event->created_by === $user->id);
+                    @endphp
+
+                    @if($event->monitoring_started)
+                        <div class="alert alert-success">
+                            <i class="bi bi-check-circle me-2"></i>
+                            <strong>Monitoring Started</strong> at {{ $event->monitoring_started_at ? \Carbon\Carbon::parse($event->monitoring_started_at)->format('M d, Y h:i A') : 'N/A' }}
+                        </div>
+                        
+                        @php
+                            $participants = $event->participants;
+                            $attended = $participants->where('attendance_status', 'Attended')->count();
+                            $late = $participants->where('attendance_status', 'Late')->count();
+                            $absent = $participants->where('attendance_status', 'Absent')->count();
+                            $scanned = $participants->where('qr_scanned', true)->count();
+                            $total = $participants->count();
+                        @endphp
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h3 class="mb-0 text-success">{{ $attended }}</h3>
+                                    <small class="text-muted">Attended</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h3 class="mb-0 text-warning">{{ $late }}</h3>
+                                    <small class="text-muted">Late</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h3 class="mb-0 text-danger">{{ $absent }}</h3>
+                                    <small class="text-muted">Absent</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3">
+                                <div class="text-center p-3 border rounded">
+                                    <h3 class="mb-0 text-info">{{ $scanned }}/{{ $total }}</h3>
+                                    <small class="text-muted">Scanned/Total</small>
+                                </div>
+                            </div>
+                        </div>
+                    @else
+                        <div class="alert alert-warning">
+                            <i class="bi bi-info-circle me-2"></i>
+                            <strong>Monitoring Not Started</strong> - Click the button below to begin tracking student participation.
+                        </div>
+                    @endif
+
+                    <div class="mb-3">
+                        <h6>Timer Thresholds</h6>
+                        <div class="row">
+                            <div class="col-md-4">
+                                <small class="text-muted"><strong>Attended:</strong> {{ $event->attended_threshold_minutes ?? 60 }} minutes</small>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted"><strong>Late:</strong> {{ $event->late_threshold_minutes ?? 60 }} minutes</small>
+                            </div>
+                            <div class="col-md-4">
+                                <small class="text-muted"><strong>Absent:</strong> {{ $event->absent_threshold_minutes ?? 120 }} minutes</small>
+                            </div>
+                        </div>
+                    </div>
+
+                    @if($canManage)
+                        @if(!$event->monitoring_started)
+                            <form method="POST" action="{{ route('admin.events.start-monitoring', $event->id) }}" class="d-inline" onsubmit="return confirm('Start participation monitoring for this event? This will begin tracking attendance based on QR code scans.');">
+                                @csrf
+                                <button type="submit" class="btn btn-success">
+                                    <i class="bi bi-play-circle me-2"></i>Start Participation Monitoring
+                                </button>
+                            </form>
+                        @endif
+
+                        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#thresholdModal">
+                            <i class="bi bi-gear me-2"></i>Edit Timer Thresholds
+                        </button>
+
+                        <a href="{{ route('admin.qrscan') }}" class="btn btn-info">
+                            <i class="bi bi-qr-code-scan me-2"></i>Scan QR Codes
+                        </a>
+                    @endif
+                </div>
+            </div>
+
+            <!-- Threshold Settings Modal -->
+            @if($canManage)
+            <div class="modal fade" id="thresholdModal" tabindex="-1" aria-labelledby="thresholdModalLabel" aria-hidden="true">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="thresholdModalLabel">Edit Timer Thresholds</h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <form method="POST" action="{{ route('admin.events.update-thresholds', $event->id) }}">
+                            @csrf
+                            <div class="modal-body">
+                                <div class="mb-3">
+                                    <label for="modal_attended_threshold" class="form-label">Attended Threshold (minutes)</label>
+                                    <input type="number" class="form-control" id="modal_attended_threshold" name="attended_threshold_minutes" value="{{ $event->attended_threshold_minutes ?? 60 }}" min="0" step="1" required>
+                                    <small class="form-text text-muted">Students scanned within this time after monitoring starts will be marked as "Attended"</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="modal_late_threshold" class="form-label">Late Threshold (minutes)</label>
+                                    <input type="number" class="form-control" id="modal_late_threshold" name="late_threshold_minutes" value="{{ $event->late_threshold_minutes ?? 60 }}" min="0" step="1" required>
+                                    <small class="form-text text-muted">Students scanned after attended threshold will be marked as "Late"</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="modal_absent_threshold" class="form-label">Absent Threshold (minutes)</label>
+                                    <input type="number" class="form-control" id="modal_absent_threshold" name="absent_threshold_minutes" value="{{ $event->absent_threshold_minutes ?? 120 }}" min="0" step="1" required>
+                                    <small class="form-text text-muted">Unscanned students after this time will be automatically marked as "Absent"</small>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                <button type="submit" class="btn btn-primary">Save Changes</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            @endif
+            @endif
 
             <!-- Requirements Section -->
             <div class="card mb-4">

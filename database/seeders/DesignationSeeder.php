@@ -10,13 +10,12 @@ class DesignationSeeder extends Seeder
     public function run(): void
     {
         $designations = [
-            'Guidance Counsellor',
+            'Guidance Counselor',
             'Prefect of Discipline',
             'Librarian',
             'Nurse',
             'OSA Staff',
             'Student Org. Moderator',
-            'IMT Coordinator',
             'Admission Services Officer',
             'Carriers Management Officer',
         ];

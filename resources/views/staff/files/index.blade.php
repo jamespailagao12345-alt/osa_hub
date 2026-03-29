@@ -6,7 +6,34 @@
 <div class="container-fluid">
     <div class="row">
         @include('staff.partials.sidebar')
-        <main class="col-md-10">
+        <main id="staffMain" class="col-md-10">
+            @php
+              $currentUser = auth()->user();
+              $isAdmin = $currentUser && (int) $currentUser->role === 4;
+              $isStaff = $currentUser && (int) $currentUser->role === 2;
+              
+              // Get designation from multiple sources
+              $userDesignation = null;
+              if ($currentUser) {
+                $userDesignation = $currentUser->designation 
+                  ?? optional($currentUser->staffProfile)->designation;
+                
+                // If still not found, check Staff table by email (case-insensitive)
+                if (!$userDesignation) {
+                  $staffRecord = \App\Models\Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($currentUser->email))])->first();
+                  $userDesignation = $staffRecord ? $staffRecord->designation : null;
+                }
+              }
+            @endphp
+            <div class="admin-back-btn-wrap mb-3">
+              @if($isAdmin)
+                <a href="{{ route('admin.staff.dashboard') }}" class="btn btn-secondary">Back</a>
+              @elseif($isStaff && $userDesignation)
+                <a href="{{ route('admin.staff.dashboard.designation', ['designation' => $userDesignation]) }}" class="btn btn-secondary">Back</a>
+              @else
+                <a href="{{ route('staff.organizations.index') }}" class="btn btn-secondary">Back</a>
+              @endif
+            </div>
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h3>My Files</h3>
                 <a href="{{ route('staff.files.create') }}" class="btn btn-primary">

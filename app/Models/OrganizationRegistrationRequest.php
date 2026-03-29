@@ -12,6 +12,7 @@ class OrganizationRegistrationRequest extends Model
         'organization_id',
         'status',
         'details',
+        'position',
     ];
     public function student()
     {

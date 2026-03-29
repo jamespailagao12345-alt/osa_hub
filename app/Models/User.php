@@ -5,10 +5,11 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use App\Traits\CachesReferenceData;
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, CachesReferenceData;
 
     /**
      * The attributes that are mass assignable.
@@ -115,6 +116,7 @@ class User extends Authenticatable
         'fraternity_sorority_position',
         'has_criminal_record',
         'form_137_presented',
+        'verification_email_count',
         'tor_presented',
         'good_moral_cert_presented',
         'birth_cert_presented',
@@ -128,7 +130,9 @@ class User extends Authenticatable
         'length_of_service',
         'contract_end_at',
         'suspended',
+        'suspension_reason',
         'last_imported_worksheet',
+        'about_me',
     ];
 
     /**
@@ -165,7 +169,7 @@ class User extends Authenticatable
 
     public function staffProfile()
     {
-        return $this->hasOne(StaffProfile::class);
+        return $this->hasOne(Staff::class, 'user_id');
     }
 
     /**
@@ -186,10 +190,13 @@ class User extends Authenticatable
 
     /**
      * Additional organizations the user belongs to (many-to-many).
+     * Allows multiple memberships with positions.
      */
     public function otherOrganizations()
     {
-        return $this->belongsToMany(Organization::class, 'organization_user');
+        return $this->belongsToMany(Organization::class, 'organization_user')
+            ->withPivot('position')
+            ->withTimestamps();
     }
 
     /**
@@ -200,7 +207,7 @@ class User extends Authenticatable
         return $this->belongsTo(Scholarship::class);
     }
         /**
-         * Get assistant staff under this staff (if staff).
+         * Get student leaders under this staff (if staff).
          */
         public function assistants()
         {
@@ -233,7 +240,7 @@ class User extends Authenticatable
             // Role 3 is assistant; role 1 (student) may have assistant assignments
             if (($this->role ?? null) === 3) return true;
             if (($this->role ?? null) === 1) {
-                return $this->assistantAssignments()->where('active', true)->count() > 0;
+                return $this->assistantAssignments()->where('is_active', true)->count() > 0;
             }
             return false;
         }
@@ -244,5 +251,156 @@ class User extends Authenticatable
         public function student()
         {
             return $this->hasOne(Student::class, 'user_id', 'id');
+        }
+
+        /**
+         * Get event feedback submitted by this user.
+         */
+        public function eventFeedback()
+        {
+            return $this->hasMany(EventFeedback::class);
+        }
+
+        /**
+         * Get points earned by this user.
+         */
+        public function studentPoints()
+        {
+            return $this->hasMany(StudentPoint::class);
+        }
+
+        /**
+         * Get total points earned by this user.
+         */
+        public function getTotalPointsAttribute()
+        {
+            return $this->studentPoints()->sum('points');
+        }
+
+        /**
+         * Get all addresses for this user.
+         */
+        public function addresses()
+        {
+            return $this->morphMany(Address::class, 'addressable');
+        }
+
+        /**
+         * Get the home address for this user.
+         */
+        public function homeAddress()
+        {
+            return $this->morphOne(Address::class, 'addressable')->where('type', 'home');
+        }
+
+        /**
+         * Get emergency contacts for this user.
+         */
+        public function emergencyContacts()
+        {
+            return $this->hasMany(EmergencyContact::class);
+        }
+
+        /**
+         * Get family members for this user.
+         */
+        public function familyMembers()
+        {
+            return $this->hasMany(FamilyMember::class);
+        }
+
+        /**
+         * Get a specific family member by relation.
+         */
+        public function familyMember($relation)
+        {
+            return $this->hasOne(FamilyMember::class)->where('relation', $relation);
+        }
+
+        /**
+         * Get educational backgrounds for this user.
+         */
+        public function educationalBackgrounds()
+        {
+            return $this->hasMany(EducationalBackground::class);
+        }
+
+        /**
+         * Get educational background by level.
+         */
+        public function educationalBackground($level)
+        {
+            return $this->hasOne(EducationalBackground::class)->where('level', $level);
+        }
+
+        /**
+         * Get student information for this user.
+         */
+        public function studentInformation()
+        {
+            return $this->hasOne(StudentInformation::class);
+        }
+
+        /**
+         * Get personal information for this user.
+         */
+        public function personalInformation()
+        {
+            return $this->hasOne(PersonalInformation::class);
+        }
+
+        /**
+         * Get document checklist for this user.
+         */
+        public function documentChecklist()
+        {
+            return $this->hasOne(DocumentChecklist::class);
+        }
+
+        /**
+         * Get PWD information for this user.
+         */
+        public function pwdInformation()
+        {
+            return $this->hasOne(PwdInformation::class);
+        }
+
+        /**
+         * Get indigenous member information for this user.
+         */
+        public function indigenousMember()
+        {
+            return $this->hasOne(IndigenousMember::class);
+        }
+
+        /**
+         * Get government affiliation for this user.
+         */
+        public function governmentAffiliation()
+        {
+            return $this->hasOne(GovernmentAffiliation::class);
+        }
+
+        /**
+         * Get fraternity member information for this user.
+         */
+        public function fraternityMember()
+        {
+            return $this->hasOne(FraternityMember::class);
+        }
+
+        /**
+         * Get nationality for this user (if stored in personal_information).
+         */
+        public function nationality()
+        {
+            return $this->hasOneThrough(
+                Nationality::class,
+                PersonalInformation::class,
+                'user_id', // Foreign key on personal_information table
+                'id', // Foreign key on nationalities table
+                'id', // Local key on users table
+                'nationality_id' // Local key on personal_information table
+            );
         }
 }

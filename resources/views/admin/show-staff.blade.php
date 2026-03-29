@@ -16,11 +16,11 @@
       @include('admin.partials.sidebar')
   <main class="col-md-10">
         <div class="admin-back-btn-wrap">
-          <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back to Dashboard</a>
+          <a href="{{ route('admin.dashboard') }}" class="btn btn-secondary rounded-pill px-3">&lt; Back</a>
         </div>
         <style>
           /* Header underline style retained */
-          .section-header { display:block; width:100%; box-sizing:border-box; background:#fff; color: midnightblue; padding:.5rem 1rem; border:none; border-bottom:1px solid midnightblue; border-radius:0; }
+          .section-header { display:block; width:100%; box-sizing:border-box; background-color: midnightblue; color: white; padding:.5rem 1rem; border:none; border-radius:0; }
           /* Scrollable container for the staff table (vertical and horizontal as needed) */
           .table-scroll { max-height: 70vh; overflow: auto; }
           /* Allow horizontal scrolling when columns exceed viewport, but keep at least container width */
@@ -33,33 +33,48 @@
           /* Make rows from row 2 onward white; keep the first row (header) styling intact */
           .staff-table tbody tr + tr { background-color: #ffffff; color: #000; }
         </style>
-        <h3 class="mt-4"><span class="section-header">Staff</span></h3>
+        <div class="d-flex justify-content-between align-items-center mt-4 mb-3">
+            <h3 class="mb-0"><span class="section-header">Staff</span></h3>
+            <a href="{{ route('admin.add-staff') }}" class="btn btn-primary">
+                <i class="bi bi-person-plus"></i> Add Staff
+            </a>
+        </div>
         <div class="staff-table-card">
         <div class="table-scroll">
         <table class="table table-bordered staff-table align-middle mb-0">
     <tr align="center" style="background-color:midnightblue; color:white">
-  <th>Image</th><th>Employee_ID</th><th>First Name</th><th>Middle Name</th><th>Last Name</th><th>Contact Number</th><th>Email</th><th>Designation</th><th>Organizations</th><th>Birth Date</th><th>Gender</th><th>Age</th><th>Contract Ends</th><th>Time Left</th><th>Service Order</th><th>Status</th><th>Delete</th><th>Update</th>
+  <th>Image</th><th>Staff ID</th><th>First Name</th><th>Middle Name</th><th>Last Name</th><th>Contact Number</th><th>Email</th><th>Designation</th><th>Organizations</th><th>Birth Date</th><th>Sex</th><th>Age</th><th>Contract Ends</th><th>Time Left</th><th>Service Order</th><th>Status</th><th>Delete</th><th>Update</th><th>Resend Email</th>
     </tr>
-    @foreach($staff as $staff)
-      <tr id="staff-{{ $staff->id }}" align="left">
+    @foreach($staff as $staffMember)
+      <tr id="staff-{{ $staffMember->id }}" align="left">
   <td>
-    @if(!empty($staff->image))
-      <img class="staff-thumb" src="{{ \Illuminate\Support\Facades\Storage::url($staff->image) }}" alt="{{ $staff->first_name }} {{ $staff->last_name }}">
-    @else
-      <span class="text-muted">No image</span>
-    @endif
+    @php
+      $imageUrl = null;
+      if (!empty($staffMember->image)) {
+        $imagePath = $staffMember->image;
+        // Check if it's a default image path or stored image
+        if (strpos($imagePath, 'defaults/') === 0) {
+          $imageUrl = asset('storage/' . $imagePath);
+        } else {
+          $imageUrl = \Illuminate\Support\Facades\Storage::url($imagePath);
+        }
+      } else {
+        $imageUrl = asset('storage/defaults/default-profile.png');
+      }
+    @endphp
+    <img class="staff-thumb" src="{{ $imageUrl }}" alt="{{ $staffMember->first_name }} {{ $staffMember->last_name }}" onerror="this.src='{{ asset('storage/defaults/default-profile.png') }}'">
   </td>
-  <td>{{ $staff->user_id ?? $staff->id }}</td>
-  <td>{{$staff->first_name}}</td>
-  <td>{{$staff->middle_name ?? ''}}</td>
-  <td>{{$staff->last_name}}</td>
-  <td>{{$staff->contact_number ?? ''}}</td>
-  <td>{{$staff->email}}</td>
-  <td>{{$staff->designation ?? ''}}</td>
+  <td>{{ $staffMember->staff_id ?? '-' }}</td>
+  <td>{{$staffMember->first_name}}</td>
+  <td>{{$staffMember->middle_name ?? ''}}</td>
+  <td>{{$staffMember->last_name}}</td>
+  <td>{{$staffMember->contact_number ?? ''}}</td>
+  <td>{{$staffMember->email}}</td>
+  <td>{{$staffMember->designation ?? optional($staffMember->user)->designation ?? ''}}</td>
   <td>
-    @if($staff->organizations && $staff->organizations->count())
+    @if($staffMember->organizations && $staffMember->organizations->count())
       <div style="display: flex; flex-direction: column; gap: 4px;">
-        @foreach($staff->organizations as $org)
+        @foreach($staffMember->organizations->sortBy('name') as $org)
           <span style="display: block; width: fit-content; color: black; background: none;">{{ $org->name }}</span>
         @endforeach
       </div>
@@ -67,32 +82,32 @@
       <span class="text-muted">None</span>
     @endif
   </td>
-  <td>{{$staff->birth_date ?? '-'}}</td>
-  <td>{{$staff->gender ?? '-'}}</td>
-  <td>{{$staff->age ?? '-'}}</td>
+  <td>{{$staffMember->birth_date ?? '-'}}</td>
+  <td>{{$staffMember->gender ?? '-'}}</td>
+  <td>{{$staffMember->age ?? '-'}}</td>
   <td>
-    @if($staff->contract_end_at)
-      {{ \Carbon\Carbon::parse($staff->contract_end_at)->format('Y/m/d/') }}
+    @if($staffMember->contract_end_at)
+      {{ \Carbon\Carbon::parse($staffMember->contract_end_at)->format('Y/m/d/') }}
     @else
       -
     @endif
   </td>
   <td>
-    @if($staff->contract_end_at)
-      <span class="badge bg-info">{{ \Carbon\Carbon::parse($staff->contract_end_at)->format('Y/m/d/') }}</span>
+    @if($staffMember->contract_end_at)
+      <span class="badge bg-info">{{ \Carbon\Carbon::parse($staffMember->contract_end_at)->format('Y/m/d/') }}</span>
     @else
       <span class="text-muted">-</span>
     @endif
   </td>
   <td>
-    @if(!empty($staff->service_order))
-      <a href="{{ \Illuminate\Support\Facades\Storage::url($staff->service_order) }}" target="_blank" class="btn btn-info btn-sm">Download S.O.</a>
+    @if(!empty($staffMember->service_order))
+      <a href="{{ \Illuminate\Support\Facades\Storage::url($staffMember->service_order) }}" target="_blank" class="btn btn-info btn-sm">Download S.O.</a>
     @else
       <span class="text-muted">No S.O.</span>
     @endif
   </td>
   <td>
-    @php($st = strtolower($staff->employment_status ?? ''))
+    @php($st = strtolower($staffMember->employment_status ?? ''))
     @if($st === 'active')
       <span class="badge bg-success">Active</span>
     @elseif($st === 'inactive')
@@ -104,14 +119,29 @@
     @endif
   </td>
         <td>
-          <form method="POST" action="{{ route('admin.staff.destroy', $staff->id) }}" style="display:inline">
+          <form method="POST" action="{{ route('admin.staff.destroy', $staffMember->id) }}" style="display:inline">
             @csrf
             @method('DELETE')
             <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Are you sure you want to delete this staff member?')">Delete</button>
           </form>
         </td>
         <td>
-          <a href="{{ route('admin.staff.edit', $staff->id) }}" class="btn btn-warning btn-sm">Update</a>
+          <a href="{{ route('admin.staff.edit', $staffMember->id) }}" class="btn btn-warning btn-sm">Update</a>
+        </td>
+        <td>
+          @php
+            $user = $staffMember->user ?? \App\Models\User::where('email', $staffMember->email)->first();
+            $verificationEmailCount = $user ? ($user->verification_email_count ?? 0) : 0;
+          @endphp
+          <div class="d-flex flex-column gap-2 align-items-center">
+            <small class="text-muted">Sent: {{ $verificationEmailCount }}</small>
+            <form action="{{ route('admin.staff.resend-verification', $staffMember->id) }}" method="POST" style="display: inline-block;">
+              @csrf
+              <button type="submit" class="btn btn-info btn-sm" onclick="return confirm('Are you sure you want to resend the verification email to {{ $staffMember->email }}?')">
+                <i class="bi bi-envelope"></i> Resend
+              </button>
+            </form>
+          </div>
         </td>
       </tr>
   @endforeach

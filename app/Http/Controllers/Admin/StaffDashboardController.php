@@ -13,7 +13,11 @@ class StaffDashboardController extends Controller
     public function index(Request $request)
     {
         // Use Staff records so we have designation and organization set from admin/add-staff
-        $staff = Staff::with(['department','organization'])->get();
+        // Load both single organization and multiple organizations relationships
+        $staff = Staff::with(['department', 'organization', 'organizations'])
+            ->orderBy('last_name')
+            ->orderBy('first_name')
+            ->get();
         $user = auth()->user();
         $currentUserDesignation = null;
         $currentUserStaffRecord = null;
@@ -21,7 +25,7 @@ class StaffDashboardController extends Controller
         if ($user) {
             // Try to find the staff record for the current user by email (case-insensitive)
             $currentUserStaffRecord = Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($user->email))])
-                ->with(['department','organization'])
+                ->with(['department', 'organization', 'organizations'])
                 ->first();
             
             $currentUserDesignation = $user->designation
@@ -36,9 +40,16 @@ class StaffDashboardController extends Controller
 
     public function showByDesignation(Request $request, string $designation)
     {
-        $designationRecord = Designation::where('name', $designation)->first();
+        // Normalize "Guidance Counsellor" (British spelling) to "Guidance Counselor" (American spelling) for consistency
+        // This handles backward compatibility with existing data that may use British spelling
+        $normalizedDesignation = trim($designation);
+        if (strcasecmp($normalizedDesignation, 'Guidance Counsellor') === 0) {
+            $normalizedDesignation = 'Guidance Counselor';
+        }
+        
+        $designationRecord = Designation::where('name', $normalizedDesignation)->first();
         if (!$designationRecord) {
-            abort(404, 'Designation not found');
+            abort(404, 'Designation not found: ' . $designation);
         }
         // Access control: staff (role=2) can only view their own designation
         $user = auth()->user();
@@ -50,7 +61,14 @@ class StaffDashboardController extends Controller
                 ?? optional($user->staffProfile)->designation
                 ?? ($staffRecord ? $staffRecord->designation : null);
             
-            if (!$userDesignation || strcasecmp($userDesignation, $designation) !== 0) {
+            // Normalize user designation for comparison (standardize on American spelling)
+            // This handles backward compatibility with existing data that may use British spelling
+            $normalizedUserDesignation = trim($userDesignation ?? '');
+            if (strcasecmp($normalizedUserDesignation, 'Guidance Counsellor') === 0) {
+                $normalizedUserDesignation = 'Guidance Counselor';
+            }
+            
+            if (!$userDesignation || strcasecmp($normalizedUserDesignation, $normalizedDesignation) !== 0) {
                 $prev = url()->previous();
                 if ($prev && $prev !== url()->current()) {
                     return redirect()->to($prev)->with('error', 'not allowed');
@@ -102,7 +120,8 @@ class StaffDashboardController extends Controller
             }
         }
         // Use Staff model to filter by designation and include relations
-        $staff = \App\Models\Staff::where('designation', $designation)
+        // Use normalized designation to ensure we find the correct records
+        $staff = \App\Models\Staff::where('designation', $normalizedDesignation)
             ->with(['department','organization'])
             ->paginate(15);
 
@@ -110,14 +129,17 @@ class StaffDashboardController extends Controller
         $isAdmin = $user && (int) $user->role === 4;
         $isStaff = $user && (int) $user->role === 2;
         
-        // For Admission Services Officer, also pass all students with filters
+        // For Admission Services Officer and Prefect of Discipline, also pass all students with filters
         $students = collect([]);
         $departments = collect([]);
-        if (strcasecmp(str_replace(' ', '', $designation), 'AdmissionServicesOfficer') === 0) {
-            // Show students if form was submitted (search button clicked) - this allows showing all when no filters
-            // Check if any filter parameter exists in the request (even if empty)
+        $isAdmissionServicesOfficer = strcasecmp(str_replace(' ', '', $designation), 'AdmissionServicesOfficer') === 0;
+        $isPrefectOfDiscipline = strcasecmp(str_replace(' ', '', $designation), 'PrefectofDiscipline') === 0 || strcasecmp($designation, 'Prefect of Discipline') === 0;
+        if ($isAdmissionServicesOfficer || $isPrefectOfDiscipline) {
+            // For Prefect of Discipline, always show students (even without filters)
+            // For Admission Services Officer, require form submission (search button clicked)
             $formSubmitted = $request->has('search') || $request->has('department_id') || $request->has('year_level');
-            if ($formSubmitted) {
+            // For Prefect of Discipline, always fetch students; for Admission Services Officer, require form submission
+            if ($isPrefectOfDiscipline || $formSubmitted) {
                 $search = $request->input('search', '');
                 $hasSearch = $request->filled('search') && !empty(trim($search));
                 $hasDepartment = $request->filled('department_id');
@@ -128,22 +150,14 @@ class StaffDashboardController extends Controller
                 
                 // Only apply search filter if search term is provided and not empty
                 if ($hasSearch) {
-                    $studentsQuery->where(function($q) use ($search) {
-                        // Search in students table
-                        $q->where('first_name', 'like', '%' . $search . '%')
-                          ->orWhere('last_name', 'like', '%' . $search . '%')
-                          ->orWhere('middle_name', 'like', '%' . $search . '%')
-                          ->orWhere('email', 'like', '%' . $search . '%')
-                          ->orWhere('contact_number', 'like', '%' . $search . '%')
-                          // Also search in related users table
-                          ->orWhereHas('user', function($userQuery) use ($search) {
-                              $userQuery->where('first_name', 'like', '%' . $search . '%')
-                                        ->orWhere('last_name', 'like', '%' . $search . '%')
-                                        ->orWhere('middle_name', 'like', '%' . $search . '%')
-                                        ->orWhere('email', 'like', '%' . $search . '%')
-                                        ->orWhere('user_id', 'like', '%' . $search . '%')
-                                        ->orWhere('contact_number', 'like', '%' . $search . '%');
-                          });
+                    // Search only in related users table (student_information table doesn't have name/email columns)
+                    $studentsQuery->whereHas('user', function($userQuery) use ($search) {
+                        $userQuery->where('first_name', 'like', '%' . $search . '%')
+                                  ->orWhere('last_name', 'like', '%' . $search . '%')
+                                  ->orWhere('middle_name', 'like', '%' . $search . '%')
+                                  ->orWhere('email', 'like', '%' . $search . '%')
+                                  ->orWhere('user_id', 'like', '%' . $search . '%')
+                                  ->orWhere('contact_number', 'like', '%' . $search . '%');
                     });
                 }
                 
@@ -160,10 +174,9 @@ class StaffDashboardController extends Controller
                 // Year level filter - check both tables (only if year_level is provided and not empty)
                 if ($hasYearLevel) {
                     $studentsQuery->where(function($q) use ($request) {
-                        $q->where('year_level', $request->year_level)
-                          ->orWhereHas('user', function($userQuery) use ($request) {
-                              $userQuery->where('year_level', $request->year_level);
-                          });
+                        $q->whereHas('user.studentInformation', function($siQuery) use ($request) {
+                            $siQuery->where('year_level', $request->year_level);
+                        });
                     });
                 }
                 
@@ -194,7 +207,9 @@ class StaffDashboardController extends Controller
                 
                 // Year level filter for users (only if year_level is provided and not empty)
                 if ($hasYearLevel) {
-                    $usersQuery->where('year_level', $request->year_level);
+                    $usersQuery->whereHas('studentInformation', function($q) use ($request) {
+                        $q->where('year_level', $request->year_level);
+                    });
                 }
                 
                 $usersFromUserTable = $usersQuery->get();
@@ -219,8 +234,8 @@ class StaffDashboardController extends Controller
                     $studentsFromStudentTable = $studentsFromStudentTable->merge($newStudents);
                 }
                 
-                // Combine and format results
-                $students = $studentsFromStudentTable
+                // Combine and format results, then sort alphabetically
+                $studentsCollection = $studentsFromStudentTable
                     ->map(function($student) {
                         // Mark as Student model
                         $student->isStudentModel = true;
@@ -243,21 +258,190 @@ class StaffDashboardController extends Controller
                     })
                     ->sortBy(function($item) {
                         // Sort alphabetically by last name, then first name (case-insensitive)
-                        $lastName = strtolower($item->last_name ?? $item->user->last_name ?? '');
-                        $firstName = strtolower($item->first_name ?? $item->user->first_name ?? '');
+                        $lastName = strtolower(($item->last_name ?? optional($item->user)->last_name) ?? '');
+                        $firstName = strtolower(($item->first_name ?? optional($item->user)->first_name) ?? '');
                         return $lastName . ' ' . $firstName;
                     })
                     ->values();
+                
+                // Paginate students for better performance
+                $perPage = 50;
+                $currentPage = $request->get('page', 1);
+                $totalStudents = $studentsCollection->count();
+                $offset = ($currentPage - 1) * $perPage;
+                $paginatedStudents = $studentsCollection->slice($offset, $perPage)->values();
+                
+                // Create paginator manually for Prefect of Discipline and Admission Services Officer
+                $students = new \Illuminate\Pagination\LengthAwarePaginator(
+                    $paginatedStudents,
+                    $totalStudents,
+                    $perPage,
+                    $currentPage,
+                    ['path' => $request->url(), 'query' => $request->query()]
+                );
             }
             
             // Get departments for filter dropdown
             $departments = \App\Models\Department::orderBy('name')->get();
         }
         
-        // Get all approved events for QR scanner dropdown
+        // Get all approved events with Required Student Participation ON for QR scanner dropdown
         $events = \App\Models\Event::where('status', 'approved')
+            ->where('required_student_participation', true)
             ->orderBy('event_date', 'desc')
             ->get();
+        
+        // For Guidance Counselor, fetch and group appointments by reason_for_counseling
+        $appointmentsByReason = collect([]);
+        if (strcasecmp($normalizedDesignation, 'Guidance Counselor') === 0) {
+            // Get the current user
+            $currentUser = auth()->user();
+            $currentUserId = $currentUser ? $currentUser->id : null;
+            
+            // Build query for appointments
+            if ($isStaff && !$isAdmin && $currentUserId) {
+                // For staff users: Get appointments assigned to them that have reason_for_counseling
+                $appointments = \App\Models\Appointment::where('assigned_staff_id', $currentUserId)
+                    ->whereNotNull('reason_for_counseling')
+                    ->with(['assignedStaff', 'user'])
+                    ->orderBy('appointment_date', 'desc')
+                    ->orderBy('appointment_time', 'desc')
+                    ->get();
+            } else {
+                // For admins: Get all appointments for Guidance Counselor
+                // Find Guidance Counselor staff user IDs from User table
+                $guidanceCounselorUserIds = \App\Models\User::where('role', 2)
+                    ->where(function($query) use ($normalizedDesignation) {
+                        $query->where('designation', $normalizedDesignation)
+                              ->orWhere('designation', 'Guidance Counsellor');
+                    })
+                    ->pluck('id')
+                    ->toArray();
+                
+                // Also check Staff table for Guidance Counselor emails
+                $guidanceCounselorStaffEmails = \App\Models\Staff::where(function($query) use ($normalizedDesignation) {
+                        $query->where('designation', $normalizedDesignation)
+                              ->orWhere('designation', 'Guidance Counsellor');
+                    })
+                    ->pluck('email')
+                    ->toArray();
+                
+                // Get user IDs from Staff emails
+                if (!empty($guidanceCounselorStaffEmails)) {
+                    $staffUserIds = \App\Models\User::whereIn('email', $guidanceCounselorStaffEmails)
+                        ->where('role', 2)
+                        ->pluck('id')
+                        ->toArray();
+                    $guidanceCounselorUserIds = array_unique(array_merge($guidanceCounselorUserIds, $staffUserIds));
+                }
+                
+                // Get appointments assigned to Guidance Counselor staff that have reason_for_counseling
+                // OR appointments with Guidance Counselor concern that have reason_for_counseling
+                $appointments = \App\Models\Appointment::where(function($query) use ($guidanceCounselorUserIds) {
+                        // Appointments assigned to Guidance Counselor staff
+                        if (!empty($guidanceCounselorUserIds)) {
+                            $query->whereIn('assigned_staff_id', $guidanceCounselorUserIds);
+                        }
+                        // OR appointments with Guidance Counselor concern
+                        $query->orWhere(function($concernQuery) {
+                            $concernQuery->where('concern', 'like', '%Guidance Counselor%')
+                                         ->orWhere('concern', 'like', '%Guidance Counsellor%');
+                        });
+                    })
+                    ->whereNotNull('reason_for_counseling')
+                    ->with(['assignedStaff', 'user'])
+                    ->orderBy('appointment_date', 'desc')
+                    ->orderBy('appointment_time', 'desc')
+                    ->get();
+            }
+            
+            // Group appointments by reason_for_counseling
+            // Map reason_for_counseling values to service names (case-insensitive matching)
+            $appointmentsByReason = $appointments->groupBy(function($appointment) {
+                // Normalize the reason_for_counseling to match service names
+                $reason = trim($appointment->reason_for_counseling ?? '');
+                
+                // Map to standard service names
+                $serviceMap = [
+                    'Initial Interview' => 'Initial Interview',
+                    'Information Services' => 'Information Services',
+                    'Counseling Services' => 'Counseling Services',
+                    'External Referral' => 'External Referral',
+                    'Internal Referral' => 'Internal Referral',
+                    'Exit Interview' => 'Exit Interview',
+                ];
+                
+                // Case-insensitive matching
+                foreach ($serviceMap as $key => $value) {
+                    if (strcasecmp($reason, $key) === 0) {
+                        return $value;
+                    }
+                }
+                
+                // If no match, return the original reason (might be a typo or new value)
+                return $reason;
+            });
+        }
+        
+        // For OSA Staff, use the same UI as admin dashboard
+        $isOSAStaff = strcasecmp($normalizedDesignation, 'OSA Staff') === 0;
+        
+        if ($isOSAStaff) {
+            // Pass the same data as admin dashboard
+            $pendingEvents = \App\Models\Event::where('status', 'pending')->with('creator')->get();
+            $approvedEvents = \App\Models\Event::where('status', 'approved')->with('creator')->get();
+            $staff = \App\Models\User::where('role', 2)->get();
+            $appointments = \App\Models\Appointment::where('status', 'pending')->with('user', 'assignedStaff')->get();
+            
+            return view('admin.dashboard', compact('pendingEvents', 'approvedEvents', 'staff', 'appointments'));
+        }
+        
+        // Dashboard Overview data for Nurse
+        $dashboardOverview = null;
+        if (strcasecmp($normalizedDesignation, 'Nurse') === 0) {
+            $currentUserId = $user->id ?? null;
+            
+            // Appointments On Queue (pending appointments assigned to the nurse)
+            $appointmentsOnQueue = \App\Models\Appointment::where('assigned_staff_id', $currentUserId)
+                ->where('status', 'pending')
+                ->count();
+            
+            // Recent Cases (recent appointments handled by the nurse, limit to last 10)
+            $recentCases = \App\Models\Appointment::where('assigned_staff_id', $currentUserId)
+                ->whereIn('status', ['approved', 'completed', 'rescheduled'])
+                ->with('user')
+                ->orderBy('appointment_date', 'desc')
+                ->orderBy('appointment_time', 'desc')
+                ->take(10)
+                ->get();
+            
+            // Accounts: Number of unique students and faculty served by the nurse
+            // Only count appointments where session = 'Finish' (completed sessions)
+            // Get unique user IDs from finished appointments (only those with user_id to match with User table)
+            $servedUserIds = \App\Models\Appointment::where('assigned_staff_id', $currentUserId)
+                ->where('session', 'Finish')
+                ->whereNotNull('user_id')
+                ->distinct()
+                ->pluck('user_id')
+                ->toArray();
+            
+            // Count students (role = 1)
+            $studentCount = \App\Models\User::whereIn('id', $servedUserIds)
+                ->where('role', 1)
+                ->count();
+            
+            // Count faculty/staff (role = 2)
+            $facultyCount = \App\Models\User::whereIn('id', $servedUserIds)
+                ->where('role', 2)
+                ->count();
+            
+            $dashboardOverview = [
+                'appointmentsOnQueue' => $appointmentsOnQueue,
+                'recentCases' => $recentCases,
+                'studentCount' => $studentCount,
+                'facultyCount' => $facultyCount,
+            ];
+        }
         
         return view('admin.staff.designation-dashboard', [
             'designation' => $designationRecord,
@@ -268,6 +452,377 @@ class StaffDashboardController extends Controller
             'departments' => $departments,
             'events' => $events,
             'filters' => $request->only(['search', 'department_id', 'year_level']),
+            'appointmentsByReason' => $appointmentsByReason,
+            'dashboardOverview' => $dashboardOverview,
+        ]);
+    }
+    
+    /**
+     * Show appointments for a specific Guidance Counselor service
+     */
+    public function showGuidanceCounselorService(Request $request, string $designation, string $service)
+    {
+        // Decode URL-encoded designation (Laravel should do this automatically, but be safe)
+        $designation = urldecode($designation);
+        $service = urldecode($service);
+        
+        // Normalize designation
+        $normalizedDesignation = trim($designation);
+        if (strcasecmp($normalizedDesignation, 'Guidance Counsellor') === 0) {
+            $normalizedDesignation = 'Guidance Counselor';
+        }
+        
+        // Validate designation
+        $designationRecord = Designation::where('name', $normalizedDesignation)->first();
+        if (!$designationRecord || strcasecmp($normalizedDesignation, 'Guidance Counselor') !== 0) {
+            abort(404, 'Service page not found for this designation.');
+        }
+        
+        // Validate service name
+        $validServices = [
+            'Initial Interview',
+            'Information Services',
+            'Counseling Services',
+            'External Referral',
+            'Internal Referral',
+            'Exit Interview',
+        ];
+        
+        // Normalize service name (case-insensitive matching)
+        $normalizedService = null;
+        foreach ($validServices as $validService) {
+            if (strcasecmp(trim($service), $validService) === 0) {
+                $normalizedService = $validService;
+                break;
+            }
+        }
+        
+        if (!$normalizedService) {
+            abort(404, 'Invalid service name: ' . $service);
+        }
+        
+        // Access control
+        $user = auth()->user();
+        $isAdmin = $user && (int) $user->role === 4;
+        $isStaff = $user && (int) $user->role === 2;
+        $currentUserId = $user ? $user->id : null;
+        
+        if ($isStaff && !$isAdmin) {
+            // Check if user is Guidance Counselor
+            $staffRecord = Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($user->email))])->first();
+            $userDesignation = $user->designation
+                ?? optional($user->staffProfile)->designation
+                ?? ($staffRecord ? $staffRecord->designation : null);
+            
+            $normalizedUserDesignation = trim($userDesignation ?? '');
+            if (strcasecmp($normalizedUserDesignation, 'Guidance Counsellor') === 0) {
+                $normalizedUserDesignation = 'Guidance Counselor';
+            }
+            
+            if (!$userDesignation || strcasecmp($normalizedUserDesignation, 'Guidance Counselor') !== 0) {
+                abort(403, 'Unauthorized: Only Guidance Counselor can access this page.');
+            }
+        }
+        
+        // Fetch appointments for this service
+        if ($isStaff && !$isAdmin && $currentUserId) {
+            // For staff users: Get appointments assigned to them with this reason_for_counseling
+            $appointments = \App\Models\Appointment::where('assigned_staff_id', $currentUserId)
+                ->where('reason_for_counseling', $normalizedService)
+                ->with(['assignedStaff', 'user'])
+                ->orderByRaw("CASE WHEN session = 'Finish' THEN 1 ELSE 0 END ASC")
+                ->orderByRaw('COALESCE(rescheduled_date, appointment_date) ASC')
+                ->orderByRaw('COALESCE(rescheduled_time, appointment_time) ASC')
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
+        } else {
+            // For admins: Get all appointments for Guidance Counselor with this reason_for_counseling
+            $guidanceCounselorUserIds = \App\Models\User::where('role', 2)
+                ->where(function($query) use ($normalizedDesignation) {
+                    $query->where('designation', $normalizedDesignation)
+                          ->orWhere('designation', 'Guidance Counsellor');
+                })
+                ->pluck('id')
+                ->toArray();
+            
+            $guidanceCounselorStaffEmails = \App\Models\Staff::where(function($query) use ($normalizedDesignation) {
+                    $query->where('designation', $normalizedDesignation)
+                          ->orWhere('designation', 'Guidance Counsellor');
+                })
+                ->pluck('email')
+                ->toArray();
+            
+            if (!empty($guidanceCounselorStaffEmails)) {
+                $staffUserIds = \App\Models\User::whereIn('email', $guidanceCounselorStaffEmails)
+                    ->where('role', 2)
+                    ->pluck('id')
+                    ->toArray();
+                $guidanceCounselorUserIds = array_unique(array_merge($guidanceCounselorUserIds, $staffUserIds));
+            }
+            
+            // Get appointments assigned to Guidance Counselor staff OR with Guidance Counselor concern
+            $appointments = \App\Models\Appointment::where(function($query) use ($guidanceCounselorUserIds) {
+                    if (!empty($guidanceCounselorUserIds)) {
+                        $query->whereIn('assigned_staff_id', $guidanceCounselorUserIds);
+                    }
+                    $query->orWhere(function($concernQuery) {
+                        $concernQuery->where('concern', 'like', '%Guidance Counselor%')
+                                     ->orWhere('concern', 'like', '%Guidance Counsellor%');
+                    });
+                })
+                ->where('reason_for_counseling', $normalizedService)
+                ->with(['assignedStaff', 'user'])
+                ->orderByRaw("CASE WHEN session = 'Finish' THEN 1 ELSE 0 END ASC")
+                ->orderByRaw('COALESCE(rescheduled_date, appointment_date) ASC')
+                ->orderByRaw('COALESCE(rescheduled_time, appointment_time) ASC')
+                ->orderBy('created_at', 'desc')
+                ->paginate(15);
+        }
+        
+        // Service configuration
+        $serviceConfigs = [
+            'Initial Interview' => ['color' => 'primary', 'icon' => 'person-check'],
+            'Information Services' => ['color' => 'info', 'icon' => 'info-circle'],
+            'Counseling Services' => ['color' => 'success', 'icon' => 'chat-dots'],
+            'External Referral' => ['color' => 'warning', 'icon' => 'arrow-up-right-circle'],
+            'Internal Referral' => ['color' => 'secondary', 'icon' => 'arrow-right-circle'],
+            'Exit Interview' => ['color' => 'danger', 'icon' => 'person-x'],
+        ];
+        
+        $serviceConfig = $serviceConfigs[$normalizedService] ?? ['color' => 'secondary', 'icon' => 'circle'];
+        $returnPath = '/admin/staff/dashboard/' . $designation;
+        
+        return view('admin.staff.dashboard.guidance-counselor.service', [
+            'designation' => $designationRecord,
+            'service' => $normalizedService,
+            'serviceConfig' => $serviceConfig,
+            'appointments' => $appointments,
+            'isAdmin' => $isAdmin,
+            'isStaff' => $isStaff,
+            'returnPath' => $returnPath,
+        ]);
+    }
+    
+    /**
+     * Show clients list for Guidance Counselor
+     */
+    public function showGuidanceCounselorClients(Request $request, string $designation)
+    {
+        // Normalize designation
+        $normalizedDesignation = trim($designation);
+        if (strcasecmp($normalizedDesignation, 'Guidance Counsellor') === 0) {
+            $normalizedDesignation = 'Guidance Counselor';
+        }
+        
+        // Validate designation
+        $designationRecord = Designation::where('name', $normalizedDesignation)->first();
+        if (!$designationRecord || strcasecmp($normalizedDesignation, 'Guidance Counselor') !== 0) {
+            abort(404, 'Clients list page not found for this designation.');
+        }
+        
+        // Access control
+        $user = auth()->user();
+        $isAdmin = $user && (int) $user->role === 4;
+        $isStaff = $user && (int) $user->role === 2;
+        $currentUserId = $user ? $user->id : null;
+        
+        if ($isStaff && !$isAdmin) {
+            // Check if user is Guidance Counselor
+            $staffRecord = Staff::whereRaw('LOWER(email) = ?', [strtolower(trim($user->email))])->first();
+            $userDesignation = $user->designation
+                ?? optional($user->staffProfile)->designation
+                ?? ($staffRecord ? $staffRecord->designation : null);
+            
+            $normalizedUserDesignation = trim($userDesignation ?? '');
+            if (strcasecmp($normalizedUserDesignation, 'Guidance Counsellor') === 0) {
+                $normalizedUserDesignation = 'Guidance Counselor';
+            }
+            
+            if (!$userDesignation || strcasecmp($normalizedUserDesignation, 'Guidance Counselor') !== 0) {
+                abort(403, 'Unauthorized: Only Guidance Counselor can access this page.');
+            }
+        }
+        
+        // Fetch clients (unique people who have appointments with Guidance Counselor)
+        if ($isStaff && !$isAdmin && $currentUserId) {
+            // For staff users: Get unique clients from appointments assigned to them
+            $appointments = \App\Models\Appointment::where('assigned_staff_id', $currentUserId)
+                ->whereNotNull('reason_for_counseling')
+                ->with(['assignedStaff', 'user'])
+                ->get();
+        } else {
+            // For admins: Get unique clients from all appointments for Guidance Counselor
+            $guidanceCounselorUserIds = \App\Models\User::where('role', 2)
+                ->where(function($query) use ($normalizedDesignation) {
+                    $query->where('designation', $normalizedDesignation)
+                          ->orWhere('designation', 'Guidance Counsellor');
+                })
+                ->pluck('id')
+                ->toArray();
+            
+            $guidanceCounselorStaffEmails = \App\Models\Staff::where(function($query) use ($normalizedDesignation) {
+                    $query->where('designation', $normalizedDesignation)
+                          ->orWhere('designation', 'Guidance Counsellor');
+                })
+                ->pluck('email')
+                ->toArray();
+            
+            if (!empty($guidanceCounselorStaffEmails)) {
+                $staffUserIds = \App\Models\User::whereIn('email', $guidanceCounselorStaffEmails)
+                    ->where('role', 2)
+                    ->pluck('id')
+                    ->toArray();
+                $guidanceCounselorUserIds = array_unique(array_merge($guidanceCounselorUserIds, $staffUserIds));
+            }
+            
+            // Get appointments assigned to Guidance Counselor staff OR with Guidance Counselor concern
+            $appointments = \App\Models\Appointment::where(function($query) use ($guidanceCounselorUserIds) {
+                    if (!empty($guidanceCounselorUserIds)) {
+                        $query->whereIn('assigned_staff_id', $guidanceCounselorUserIds);
+                    }
+                    $query->orWhere(function($concernQuery) {
+                        $concernQuery->where('concern', 'like', '%Guidance Counselor%')
+                                     ->orWhere('concern', 'like', '%Guidance Counsellor%');
+                    });
+                })
+                ->whereNotNull('reason_for_counseling')
+                ->with(['assignedStaff', 'user'])
+                ->get();
+        }
+        
+        // Extract unique clients from appointments
+        // Group by email (primary) or user_id (fallback), then get unique clients
+        $clientsMap = [];
+        
+        foreach ($appointments as $appointment) {
+            // Determine client identifier (email first, then user_id)
+            $clientIdentifier = null;
+            $clientEmail = null;
+            $clientUserId = null;
+            
+            if (!empty($appointment->email)) {
+                $clientEmail = strtolower(trim($appointment->email));
+                $clientIdentifier = 'email:' . $clientEmail;
+            } elseif ($appointment->user_id) {
+                $clientUserId = $appointment->user_id;
+                $clientIdentifier = 'user:' . $appointment->user_id;
+            }
+            
+            if (!$clientIdentifier) {
+                continue; // Skip appointments without email or user_id
+            }
+            
+            // Initialize client data if not exists
+            if (!isset($clientsMap[$clientIdentifier])) {
+                if ($clientEmail) {
+                    // Use email as identifier
+                    $clientsMap[$clientIdentifier] = [
+                        'email' => $appointment->email,
+                        'full_name' => $appointment->full_name,
+                        'contact_number' => $appointment->contact_number,
+                        'user_id' => $appointment->user_id,
+                        'user' => $appointment->user,
+                        'appointment_count' => 0,
+                        'last_appointment_date' => null,
+                        'categories' => [],
+                        'reasons' => [],
+                    ];
+                } else {
+                    // Use user_id as identifier
+                    $user = $appointment->user;
+                    $clientsMap[$clientIdentifier] = [
+                        'email' => $user->email ?? '-',
+                        'full_name' => ($user->first_name ?? '') . ' ' . ($user->last_name ?? ''),
+                        'contact_number' => $user->contact_number ?? $appointment->contact_number ?? '-',
+                        'user_id' => $appointment->user_id,
+                        'user' => $user,
+                        'appointment_count' => 0,
+                        'last_appointment_date' => null,
+                        'categories' => [],
+                        'reasons' => [],
+                    ];
+                }
+            }
+            
+            // Update client data with appointment information
+            $client = &$clientsMap[$clientIdentifier];
+            $client['appointment_count']++;
+            
+            // Update last appointment date
+            $appointmentDate = $appointment->action_taken === 'reschedule' && $appointment->rescheduled_date 
+                ? \Carbon\Carbon::parse($appointment->rescheduled_date) 
+                : $appointment->appointment_date;
+            
+            if (!$client['last_appointment_date'] || 
+                ($appointmentDate && $appointmentDate > $client['last_appointment_date'])) {
+                $client['last_appointment_date'] = $appointmentDate;
+            }
+            
+            // Collect categories
+            if ($appointment->category) {
+                $client['categories'][] = $appointment->category;
+            }
+            
+            // Collect reasons for counseling
+            if ($appointment->reason_for_counseling) {
+                $client['reasons'][] = $appointment->reason_for_counseling;
+            }
+        }
+        
+        // Convert to collection and process
+        $clients = collect($clientsMap)->map(function($client) use ($appointments) {
+            // Get unique categories and reasons
+            $client['categories'] = collect($client['categories'])->unique()->values()->toArray();
+            $client['reasons'] = collect($client['reasons'])->unique()->values()->toArray();
+            
+            // Get all appointments for this client
+            $clientEmail = strtolower(trim($client['email'] ?? ''));
+            $clientUserId = $client['user_id'] ?? null;
+            
+            $clientAppointments = $appointments->filter(function($apt) use ($clientEmail, $clientUserId) {
+                if (!empty($clientEmail) && !empty($apt->email)) {
+                    return strtolower(trim($apt->email)) === $clientEmail;
+                }
+                if ($clientUserId && $apt->user_id) {
+                    return $apt->user_id === $clientUserId;
+                }
+                return false;
+            })->sortByDesc(function($apt) {
+                $date = $apt->action_taken === 'reschedule' && $apt->rescheduled_date 
+                    ? \Carbon\Carbon::parse($apt->rescheduled_date) 
+                    : $apt->appointment_date;
+                return $date ? $date->timestamp : 0;
+            })->values();
+            
+            // Add appointments to client data
+            $client['appointments'] = $clientAppointments;
+            
+            return $client;
+        })->sortByDesc('last_appointment_date')->values();
+        
+        // Paginate clients
+        $perPage = 15;
+        $currentPage = $request->get('page', 1);
+        $offset = ($currentPage - 1) * $perPage;
+        $paginatedClients = $clients->slice($offset, $perPage)->values();
+        
+        // Create paginator manually
+        $clientsPaginator = new \Illuminate\Pagination\LengthAwarePaginator(
+            $paginatedClients,
+            $clients->count(),
+            $perPage,
+            $currentPage,
+            ['path' => $request->url(), 'query' => $request->query()]
+        );
+        
+        $returnPath = '/admin/staff/dashboard/' . $designation;
+        
+        return view('admin.staff.dashboard.guidance-counselor.clients', [
+            'designation' => $designationRecord,
+            'clients' => $clientsPaginator,
+            'isAdmin' => $isAdmin,
+            'isStaff' => $isStaff,
+            'returnPath' => $returnPath,
         ]);
     }
     
@@ -284,114 +839,67 @@ class StaffDashboardController extends Controller
         $email = $user->email ?? null;
         
         if ($existingStudent) {
-            // Update existing Student record with User data
-            $existingStudent->update([
-                'first_name' => $user->first_name ?? $existingStudent->first_name,
-                'middle_name' => $user->middle_name ?? $existingStudent->middle_name,
-                'last_name' => $user->last_name ?? $existingStudent->last_name,
-                'email' => $email,
-                'contact_number' => $user->contact_number ?? $existingStudent->contact_number,
-                'gender' => $user->gender ?? $existingStudent->gender,
-                'birth_date' => $user->birth_date ?? $existingStudent->birth_date,
-                'age' => $user->age ?? $existingStudent->age,
-                'civil_status' => $user->civil_status ?? $existingStudent->civil_status,
-                'maiden_name' => $user->maiden_name ?? $existingStudent->maiden_name,
-                'place_of_birth' => $user->place_of_birth ?? $existingStudent->place_of_birth,
-                'complete_home_address' => $user->complete_home_address ?? $existingStudent->complete_home_address,
-                'department_id' => $user->department_id ?? $existingStudent->department_id,
-                'course_id' => $user->course_id ?? $existingStudent->course_id,
-                'organization_id' => $user->organization_id ?? $existingStudent->organization_id,
-                'scholarship_id' => $user->scholarship_id ?? $existingStudent->scholarship_id,
-                'year_level' => $user->year_level ?? $existingStudent->year_level,
-                'student_type1' => $user->student_type1 ?? $existingStudent->student_type1,
-                'student_type2' => $user->student_type2 ?? $existingStudent->student_type2,
-                'student_type' => $user->student_type ?? $existingStudent->student_type,
-                'school_year' => $user->school_year ?? $existingStudent->school_year,
-                'semester' => $user->semester ?? $existingStudent->semester,
-                'emergency_contact_name' => $user->emergency_contact_name ?? $existingStudent->emergency_contact_name,
-                'emergency_contact_number' => $user->emergency_contact_number ?? $existingStudent->emergency_contact_number,
-                'emergency_relation' => $user->emergency_relation ?? $existingStudent->emergency_relation,
-                'parent_spouse_guardian' => $user->parent_spouse_guardian ?? $existingStudent->parent_spouse_guardian,
-                'parent_spouse_guardian_address' => $user->parent_spouse_guardian_address ?? $existingStudent->parent_spouse_guardian_address,
-                'elementary_school' => $user->elementary_school ?? $existingStudent->elementary_school,
-                'elementary_address' => $user->elementary_address ?? $existingStudent->elementary_address,
-                'elementary_year_graduated' => $user->elementary_year_graduated ?? $existingStudent->elementary_year_graduated,
-                'high_school' => $user->high_school ?? $existingStudent->high_school,
-                'high_school_address' => $user->high_school_address ?? $existingStudent->high_school_address,
-                'high_school_year_graduated' => $user->high_school_year_graduated ?? $existingStudent->high_school_year_graduated,
-                'college_name' => $user->college_name ?? $existingStudent->college_name,
-                'college_address' => $user->college_address ?? $existingStudent->college_address,
-                'college_course' => $user->college_course ?? $existingStudent->college_course,
-                'college_year' => $user->college_year ?? $existingStudent->college_year,
-                'form_137_presented' => $user->form_137_presented ?? $existingStudent->form_137_presented,
-                'tor_presented' => $user->tor_presented ?? $existingStudent->tor_presented,
-                'good_moral_cert_presented' => $user->good_moral_cert_presented ?? $existingStudent->good_moral_cert_presented,
-                'birth_cert_presented' => $user->birth_cert_presented ?? $existingStudent->birth_cert_presented,
-                'marriage_cert_presented' => $user->marriage_cert_presented ?? $existingStudent->marriage_cert_presented,
-            ]);
+            // Update existing Student record - only update columns that exist in student_information table
+            // Note: first_name, last_name, email, etc. are in users table, not student_information
+            $updateData = [
+                'scholarship_id' => optional($user->studentInformation)->scholarship_id ?? $existingStudent->scholarship_id,
+            ];
             
-            // Add personal_data_sheet_image only if column exists
-            if (\Illuminate\Support\Facades\Schema::hasColumn('students', 'personal_data_sheet_image')) {
-                $existingStudent->update([
-                    'personal_data_sheet_image' => $user->image ?? $existingStudent->personal_data_sheet_image,
-                ]);
+            // Only update fields that exist in student_information table
+            if ($user->studentInformation) {
+                if ($user->studentInformation->year_level !== null) {
+                    $updateData['year_level'] = $user->studentInformation->year_level;
+                }
+                if ($user->studentInformation->student_type1 !== null) {
+                    $updateData['student_type1'] = $user->studentInformation->student_type1;
+                }
+                if ($user->studentInformation->student_type2 !== null) {
+                    $updateData['student_type2'] = $user->studentInformation->student_type2;
+                }
+                if ($user->studentInformation->student_type !== null) {
+                    $updateData['student_type'] = $user->studentInformation->student_type;
+                }
+                if ($user->studentInformation->school_year !== null) {
+                    $updateData['school_year'] = $user->studentInformation->school_year;
+                }
+                if ($user->studentInformation->semester !== null) {
+                    $updateData['semester'] = $user->studentInformation->semester;
+                }
+                if ($user->studentInformation->academic_year !== null) {
+                    $updateData['academic_year'] = $user->studentInformation->academic_year;
+                }
+                $updateData['is_active_scholar'] = $user->studentInformation->is_active_scholar ?? false;
+                if ($user->studentInformation->scholarship_grant_name !== null) {
+                    $updateData['scholarship_grant_name'] = $user->studentInformation->scholarship_grant_name;
+                }
             }
+            
+            $existingStudent->update($updateData);
             return $existingStudent;
         }
         
-        // Prepare student data array
+        // Prepare student data array - only include columns that exist in student_information table
+        // Note: first_name, last_name, email, etc. are in users table, not student_information
         $studentData = [
             'user_id' => $user->id,
-            'first_name' => $user->first_name ?? '',
-            'middle_name' => $user->middle_name ?? '',
-            'last_name' => $user->last_name ?? '',
-            'email' => $email,
-            'contact_number' => $user->contact_number ?? '',
-            'gender' => $user->gender ?? 'other',
-            'birth_date' => $user->birth_date ?? null,
-            'age' => $user->age ?? null,
-            'civil_status' => $user->civil_status ?? null,
-            'maiden_name' => $user->maiden_name ?? null,
-            'place_of_birth' => $user->place_of_birth ?? null,
-            'complete_home_address' => $user->complete_home_address ?? null,
-            'department_id' => $user->department_id ?? null,
-            'course_id' => $user->course_id ?? null,
-            'organization_id' => $user->organization_id ?? null,
-            'scholarship_id' => $user->scholarship_id ?? null,
-            'year_level' => $user->year_level ?? null,
-            'student_type1' => $user->student_type1 ?? null,
-            'student_type2' => $user->student_type2 ?? null,
-            'student_type' => $user->student_type ?? null,
-            'school_year' => $user->school_year ?? null,
-            'semester' => $user->semester ?? null,
-            'emergency_contact_name' => $user->emergency_contact_name ?? null,
-            'emergency_contact_number' => $user->emergency_contact_number ?? null,
-            'emergency_relation' => $user->emergency_relation ?? null,
-            'parent_spouse_guardian' => $user->parent_spouse_guardian ?? null,
-            'parent_spouse_guardian_address' => $user->parent_spouse_guardian_address ?? null,
-            'elementary_school' => $user->elementary_school ?? null,
-            'elementary_address' => $user->elementary_address ?? null,
-            'elementary_year_graduated' => $user->elementary_year_graduated ?? null,
-            'high_school' => $user->high_school ?? null,
-            'high_school_address' => $user->high_school_address ?? null,
-            'high_school_year_graduated' => $user->high_school_year_graduated ?? null,
-            'college_name' => $user->college_name ?? null,
-            'college_address' => $user->college_address ?? null,
-            'college_course' => $user->college_course ?? null,
-            'college_year' => $user->college_year ?? null,
-            'form_137_presented' => $user->form_137_presented ?? false,
-            'tor_presented' => $user->tor_presented ?? false,
-            'good_moral_cert_presented' => $user->good_moral_cert_presented ?? false,
-            'birth_cert_presented' => $user->birth_cert_presented ?? false,
-            'marriage_cert_presented' => $user->marriage_cert_presented ?? false,
+            'student_id' => $user->user_id ?? null, // Copy user_id as student_id if exists
+            'scholarship_id' => optional($user->studentInformation)->scholarship_id ?? null,
         ];
         
-        // Add personal_data_sheet_image only if column exists
-        if (\Illuminate\Support\Facades\Schema::hasColumn('students', 'personal_data_sheet_image')) {
-            $studentData['personal_data_sheet_image'] = $user->image ?? null;
+        // Only add fields that exist in student_information table
+        if ($user->studentInformation) {
+            $studentData['year_level'] = $user->studentInformation->year_level ?? null;
+            $studentData['student_type1'] = $user->studentInformation->student_type1 ?? null;
+            $studentData['student_type2'] = $user->studentInformation->student_type2 ?? null;
+            $studentData['student_type'] = $user->studentInformation->student_type ?? null;
+            $studentData['school_year'] = $user->studentInformation->school_year ?? null;
+            $studentData['semester'] = $user->studentInformation->semester ?? null;
+            $studentData['academic_year'] = $user->studentInformation->academic_year ?? null;
+            $studentData['is_active_scholar'] = $user->studentInformation->is_active_scholar ?? false;
+            $studentData['scholarship_grant_name'] = $user->studentInformation->scholarship_grant_name ?? null;
         }
         
-        // Create new Student record from User data
+        // Create new Student record from User data (only student_information table columns)
         $student = \App\Models\Student::create($studentData);
         
         return $student;

@@ -4,7 +4,7 @@
 
 @section('content')
 <div class="container">
-    <div class="mb-3">
+    <div class="admin-back-btn-wrap">
         <a href="{{ route('staff.events.index') }}" class="btn btn-secondary">Back</a>
     </div>
     <h2 class="mb-4">Create New Event</h2>

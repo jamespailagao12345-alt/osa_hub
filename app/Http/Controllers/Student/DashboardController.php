@@ -23,7 +23,7 @@ class DashboardController extends Controller
                 'last_name' => $user->last_name,
                 'department' => optional($user->department)->name,
                 'course' => optional($user->course)->name,
-                'year_level' => $user->year_level,
+                'year_level' => optional($user->studentInformation)->year_level,
                 'generated_at' => now()->toIso8601String(),
             ];
             $qrData = json_encode($qrPayload);
@@ -86,7 +86,11 @@ class DashboardController extends Controller
         ->get();
     $departments = \App\Models\Department::all();
     $scholarships = \App\Models\Scholarship::all();
-    return view('student.dashboard', compact('appointments', 'upcomingEvents', 'participations', 'nonAcademicOrganizations', 'departments', 'scholarships', 'eventsByDate', 'year', 'selectedMonth'));
+    
+    // Calculate total points earned by student
+    $totalPoints = \App\Models\StudentPoint::where('user_id', $user->id)->sum('points');
+    
+    return view('student.dashboard', compact('appointments', 'upcomingEvents', 'participations', 'nonAcademicOrganizations', 'departments', 'scholarships', 'eventsByDate', 'year', 'selectedMonth', 'totalPoints'));
     }
 
     public function qrCode()
@@ -101,7 +105,7 @@ class DashboardController extends Controller
             'last_name' => $user->last_name,
             'department' => optional($user->department)->name,
             'course' => optional($user->course)->name,
-            'year_level' => $user->year_level,
+            'year_level' => optional($user->studentInformation)->year_level,
             'generated_at' => now()->toIso8601String(),
         ];
         $qrData = json_encode($qrPayload);
