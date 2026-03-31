@@ -22,11 +22,11 @@ WORKDIR /app
 COPY . ./
 
 # Install dependencies
-RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader && \
-    npm ci && \
-    npm run build && \
-    php artisan config:cache && \
-    php artisan route:cache
+RUN composer install --no-dev --prefer-dist --no-interaction --optimize-autoloader
+
+# Build frontend assets (Laravel serves them from `public/build` by default)
+RUN npm ci
+RUN npm run build
 
 EXPOSE 8000
 
